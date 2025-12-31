@@ -128,6 +128,15 @@ require the STM32CubeProgrammer:
       JLinkGDBServer.exe -device STM32MP135F -if swd -port 2330
       arm-none-eabi-gdb.exe -q -x scripts/load.gdb
 
+### References
+
+- [SD card on bare-metal STM32MP135](https://embd.cc/sdcard-on-bare-metal-stm32mp135)
+- [Unsecuring STM32MP135 TrustZone](https://embd.cc/unsecuring-stm32mp135-trustzone)
+- [Linux Bring-Up on a Custom STM32MP135 Board](https://embd.cc/linux-bringup-on-custom-stm32mp135-board)
+- [USB Bring-Up on a Custom STM32MP135 Board](https://embd.cc/usb-bringup-on-custom-stm32mp135-board)
+- [STM32MP135 Flashing via USB with STM32CubeProg](https://embd.cc/stm32mp135-linux-cubeprog)
+- [Boot STM32MP135 Over UART With Python](https://embd.cc/boot-stm32mp135-over-uart-with-python)
+
 ### Contributing
 
 Questions, bug reports, and bring-up notes are welcome—feel free to open a
