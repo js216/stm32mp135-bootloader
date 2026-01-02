@@ -35,9 +35,9 @@ void boot_jump(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)(arg2);
    (void)(arg3);
-   uint32_t addr = DEF_ENTRY_ADDR;
+   uint32_t addr = DEF_LINUX_ADDR;
 
-   if ((argc == 1) && (arg1 >= DEF_ENTRY_ADDR))
+   if ((argc == 1) && (arg1 >= DEF_LINUX_ADDR))
       addr = arg1;
 
    my_printf("Jumping to app...\r\n");

@@ -7,6 +7,8 @@
  * @copyright 2025 Stanford Research Systems, Inc.
  */
 
+#include "defaults.h"
+
 #define CPSR_MODE_SVC	0x13U
 #define CPSR_I		(1U << 7)
 #define CPSR_F		(1U << 6)
@@ -60,7 +62,7 @@ sm_smc_entry:
    // Boot arguments
    mov r0, #0
    mov r1, #0
-   ldr r2, =0xC2008000
+   ldr r2, =DEF_DTB_ADDR
 
    // Will switch to SVC mode with IRQ and FIQ disabled
    mov r4, #(CPSR_MODE_SVC | CPSR_I | CPSR_F)

@@ -89,12 +89,12 @@ void ddr_print_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg3;
 
    uint32_t n    = DEF_PRINT_LEN;
-   uint32_t addr = DEF_ENTRY_ADDR;
+   uint32_t addr = DEF_LINUX_ADDR;
 
    if ((argc >= 1) && (arg1 > 0))
       n = arg1;
 
-   if ((argc == 2) && (arg2 >= DEF_ENTRY_ADDR))
+   if ((argc == 2) && (arg2 >= DEF_LINUX_ADDR))
       addr = arg2;
 
    ddr_print(addr, n);

@@ -14,6 +14,7 @@
 #include "diag.h"
 #include "printf.h"
 #include "sd.h"
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -23,19 +24,85 @@
 #define CMD_MAX_LEN  32
 #define HISTORY_SIZE 8
 
+struct cmd_defaults {
+   const char *label;   /* logical item name, e.g. "linux", "dtb" */
+   uint32_t len_blocks; /* length in SD-card blocks */
+   uint32_t sd_block;   /* starting SD-card block */
+   uint32_t dest_addr;  /* destination memory address */
+};
+
 struct cmd {
    const char *name;
-   const char *usage;
-   const char *desc;
-   void (*fn)(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+   const char *syntax;
+   const char *summary;
+   const struct cmd_defaults *defaults;
+   size_t num_defaults;
+   void (*handler)(int argc, uint32_t, uint32_t, uint32_t);
 };
 
 static const struct cmd cmd_list[] = {
-    {"help     ", "           ", "Display this help message",   cmd_help     },
-    {"print_ddr", "[N [L]]    ", "Print N words from DDR @ L",  ddr_print_cmd},
-    {"load_sd  ", "[N [L [M]]]", "Load N blks into DDR addr M", load_sd_cmd  },
-    {"jump     ", "[L]        ", "Jump to DDR address L",       boot_jump    },
-    {"diag     ", "           ", "Run all diagnostic tests",    diag_all     },
+    {
+     .name         = "help",
+     .syntax       = "",
+     .summary      = "Display this help message",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = cmd_help,
+     },
+
+    {
+     .name    = "print_ddr",
+     .syntax  = "[length_blocks [start_addr]]",
+     .summary = "Print words from DDR memory",
+     .defaults =
+            (const struct cmd_defaults[]){
+                {"ddr", DEF_PRINT_LEN, 0, DEF_LINUX_ADDR},
+            }, .num_defaults = 1,
+     .handler      = ddr_print_cmd,
+     },
+
+    {
+     .name    = "load_sd",
+     .syntax  = "[length_blocks [sd_block [dest_addr]]]",
+     .summary = "Load blocks from SD card into DDR memory",
+     .defaults =
+            (const struct cmd_defaults[]){
+                {"image", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
+            },                                               .num_defaults = 1,
+     .handler      = load_sd_cmd,
+     },
+
+    {
+     .name    = "jump",
+     .syntax  = "[target_addr]",
+     .summary = "Jump to a DDR memory address",
+     .defaults =
+            (const struct cmd_defaults[]){
+                {"target", 0, 0, DEF_LINUX_ADDR},
+            },              .num_defaults = 1,
+     .handler      = boot_jump,
+     },
+
+    {
+     .name         = "diag",
+     .syntax       = "",
+     .summary      = "Run all diagnostic tests",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = diag_all,
+     },
+
+    {
+     .name    = "two",
+     .syntax  = "",
+     .summary = "Load Linux image and DTB from SD card",
+     .defaults =
+            (const struct cmd_defaults[]){
+                {"linux", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
+                {"dtb", DEF_DTB_LEN, DEF_DTB_BLK, DEF_DTB_ADDR},
+            },                        .num_defaults = 2,
+     .handler      = sd_load_two,
+     },
 };
 
 // character ring buffer
@@ -99,20 +166,35 @@ void cmd_help(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg2;
    (void)arg3;
 
-   my_printf("Available commands:\r\n");
-   for (size_t i = 0; i < sizeof(cmd_list) / sizeof(cmd_list[0]); i++) {
-      if (cmd_list[i].usage[0] != '\0')
-         my_printf("  %s %s - %s\r\n", cmd_list[i].name, cmd_list[i].usage,
-                   cmd_list[i].desc);
-      else
-         my_printf("  %s - %s\r\n", cmd_list[i].name, cmd_list[i].desc);
-   }
+   my_printf("Available commands:\r\n\r\n");
 
-   my_printf("\r\nDefaults:\r\n");
-   my_printf("  print_ddr: N=%u, L=0x%08X\r\n", DEF_PRINT_LEN, DEF_ENTRY_ADDR);
-   my_printf("  load_sd  : N=%u, L=%u, M=0x%X\r\n", DEF_LOAD_LEN, DEF_LOAD_BLK,
-             DEF_LOAD_ADDR);
-   my_printf("  jump     : L=0x%08X\r\n", DEF_ENTRY_ADDR);
+   for (size_t i = 0; i < sizeof(cmd_list) / sizeof(cmd_list[0]); i++) {
+      const struct cmd *c = &cmd_list[i];
+
+      my_printf("  %s %s\r\n", c->name, c->syntax);
+      my_printf("    %s\r\n", c->summary);
+
+      /* Defaults, if any */
+      if (c->num_defaults > 0 && c->defaults != NULL) {
+         my_printf("    defaults:\r\n");
+         for (size_t j = 0; j < c->num_defaults; j++) {
+            const struct cmd_defaults *d = &c->defaults[j];
+            my_printf("      %s:", d->label);
+
+            /* Only print nonzero fields */
+            if (d->len_blocks != 0)
+               my_printf(" len_blocks=%" PRIu32, d->len_blocks);
+            if (d->sd_block != 0)
+               my_printf(" sd_block=%" PRIu32, d->sd_block);
+            if (d->dest_addr != 0)
+               my_printf(" dest_addr=0x%08" PRIX32, d->dest_addr);
+
+            my_printf("\r\n");
+         }
+      }
+
+      my_printf("\r\n");
+   }
 }
 
 static void history_add(const char *line)
@@ -259,7 +341,7 @@ static void execute_command(void)
    int argc      = parse_args_uint32(&arg1, &arg2, &arg3);
 
    // call command function
-   match->fn(argc, arg1, arg2, arg3);
+   match->handler(argc, arg1, arg2, arg3);
    cmd_prompt();
 }
 
