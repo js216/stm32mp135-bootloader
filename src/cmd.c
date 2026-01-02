@@ -7,6 +7,7 @@
  * @copyright 2025 Stanford Research Systems, Inc.
  */
 
+#include "stm32mp135fxx_ca7.h"
 #include "cmd.h"
 #include "boot.h"
 #include "ddr.h"
@@ -48,6 +49,15 @@ static const struct cmd cmd_list[] = {
      .defaults     = NULL,
      .num_defaults = 0,
      .handler      = cmd_help,
+     },
+
+    {
+     .name         = "reset",
+     .syntax       = "",
+     .summary      = "Reset the system",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = cmd_reset,
      },
 
     {
@@ -195,6 +205,24 @@ void cmd_help(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
       my_printf("\r\n");
    }
+}
+
+void cmd_reset(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+    (void)argc; (void)arg1; (void)arg2; (void)arg3;
+
+    my_printf("System reset requested...\r\n");
+
+    /* Ensure previous writes complete */
+    __asm__ volatile ("dsb sy");  // data synchronization barrier
+
+    /* Trigger a reset: set SYSRESETREQ via RCC MP_GRSTCSETR */
+    RCC->MP_GRSTCSETR = RCC_MP_GRSTCSETR_MPSYSRST;  // reset entire system
+
+    /* Wait indefinitely for reset to occur */
+    while (1) {
+        __asm__ volatile("wfe");  // wait for event (low-power idle)
+    }
 }
 
 static void history_add(const char *line)
