@@ -70,7 +70,7 @@ void sysclk_init(void)
    RCC_ClkInitTypeDef rcc_clkinitstructure;
    RCC_OscInitTypeDef rcc_oscinitstructure;
 
-   /* Enable all available oscillators*/
+   /* Enable all available oscillators except LSE */
    rcc_oscinitstructure.OscillatorType =
        (RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSE |
         RCC_OSCILLATORTYPE_CSI | RCC_OSCILLATORTYPE_LSI);
