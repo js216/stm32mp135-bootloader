@@ -105,13 +105,13 @@ static const struct cmd cmd_list[] = {
     {
      .name    = "two",
      .syntax  = "",
-     .summary = "Load Linux image and DTB from SD card",
+     .summary = "Load Linux image and DTB from SD card and jump to it",
      .defaults =
             (const struct cmd_defaults[]){
                 {"linux", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
                 {"dtb", DEF_DTB_LEN, DEF_DTB_BLK, DEF_DTB_ADDR},
             },                        .num_defaults = 2,
-     .handler      = sd_load_two,
+     .handler      = cmd_load_two,
      },
 };
 
@@ -167,62 +167,6 @@ static void line_load(const char *src)
    line_buf[CMD_MAX_LEN - 1] = '\0';
    line_len                  = strlen(line_buf);
    my_printf("%s", line_buf);
-}
-
-void cmd_help(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
-{
-   (void)argc;
-   (void)arg1;
-   (void)arg2;
-   (void)arg3;
-
-   my_printf("Available commands:\r\n\r\n");
-
-   for (size_t i = 0; i < sizeof(cmd_list) / sizeof(cmd_list[0]); i++) {
-      const struct cmd *c = &cmd_list[i];
-
-      my_printf("  %s %s\r\n", c->name, c->syntax);
-      my_printf("    %s\r\n", c->summary);
-
-      /* Defaults, if any */
-      if (c->num_defaults > 0 && c->defaults != NULL) {
-         my_printf("    defaults:\r\n");
-         for (size_t j = 0; j < c->num_defaults; j++) {
-            const struct cmd_defaults *d = &c->defaults[j];
-            my_printf("      %s:", d->label);
-
-            /* Only print nonzero fields */
-            if (d->len_blocks != 0)
-               my_printf(" len_blocks=%" PRIu32, d->len_blocks);
-            if (d->sd_block != 0)
-               my_printf(" sd_block=%" PRIu32, d->sd_block);
-            if (d->dest_addr != 0)
-               my_printf(" dest_addr=0x%08" PRIX32, d->dest_addr);
-
-            my_printf("\r\n");
-         }
-      }
-
-      my_printf("\r\n");
-   }
-}
-
-void cmd_reset(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
-{
-    (void)argc; (void)arg1; (void)arg2; (void)arg3;
-
-    my_printf("System reset requested...\r\n");
-
-    /* Ensure previous writes complete */
-    __asm__ volatile ("dsb sy");  // data synchronization barrier
-
-    /* Trigger a reset: set SYSRESETREQ via RCC MP_GRSTCSETR */
-    RCC->MP_GRSTCSETR = RCC_MP_GRSTCSETR_MPSYSRST;  // reset entire system
-
-    /* Wait indefinitely for reset to occur */
-    while (1) {
-        __asm__ volatile("wfe");  // wait for event (low-power idle)
-    }
 }
 
 static void history_add(const char *line)
@@ -483,4 +427,71 @@ void cmd_poll(void)
          // all other characters ignored
       }
    }
+}
+
+void cmd_help(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+
+   my_printf("Available commands:\r\n\r\n");
+
+   for (size_t i = 0; i < sizeof(cmd_list) / sizeof(cmd_list[0]); i++) {
+      const struct cmd *c = &cmd_list[i];
+
+      my_printf("  %s %s\r\n", c->name, c->syntax);
+      my_printf("    %s\r\n", c->summary);
+
+      /* Defaults, if any */
+      if (c->num_defaults > 0 && c->defaults != NULL) {
+         my_printf("    defaults:\r\n");
+         for (size_t j = 0; j < c->num_defaults; j++) {
+            const struct cmd_defaults *d = &c->defaults[j];
+            my_printf("      %s:", d->label);
+
+            /* Only print nonzero fields */
+            if (d->len_blocks != 0)
+               my_printf(" len_blocks=%" PRIu32, d->len_blocks);
+            if (d->sd_block != 0)
+               my_printf(" sd_block=%" PRIu32, d->sd_block);
+            if (d->dest_addr != 0)
+               my_printf(" dest_addr=0x%08" PRIX32, d->dest_addr);
+
+            my_printf("\r\n");
+         }
+      }
+
+      my_printf("\r\n");
+   }
+}
+
+void cmd_reset(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+    (void)argc; (void)arg1; (void)arg2; (void)arg3;
+
+    my_printf("System reset requested...\r\n");
+
+    /* Ensure previous writes complete */
+    __asm__ volatile ("dsb sy");  // data synchronization barrier
+
+    /* Trigger a reset: set SYSRESETREQ via RCC MP_GRSTCSETR */
+    RCC->MP_GRSTCSETR = RCC_MP_GRSTCSETR_MPSYSRST;  // reset entire system
+
+    /* Wait indefinitely for reset to occur */
+    while (1) {
+        __asm__ volatile("wfe");  // wait for event (low-power idle)
+    }
+}
+
+void cmd_load_two(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+   sd_read(DEF_LINUX_BLK, DEF_LINUX_LEN, DEF_LINUX_ADDR);
+   sd_read(DEF_DTB_BLK, DEF_DTB_LEN, DEF_DTB_ADDR);
+   boot_jump(0, 0, 0, 0);
 }
