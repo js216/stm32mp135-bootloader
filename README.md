@@ -11,12 +11,13 @@ simpler [custom board](https://github.com/js216/stm32mp135_test_board).
 
 Features include:
 
+- Boot Linux: Load kernel and DTB into RAM and execute it
 - Write to SD card from USB via Mass Storage Class, like a flash drive
-  *(optional)*
-- Load program from SD card to DDR and execute it *(optional)*
-- Command line with tab completion and "up arrow" history *(optional)*
-- Super simple, hackable code: <2k lines of code on top of the [ST HAL
-  drivers](https://wiki.st.com/stm32mpu/wiki/STM32CubeMP13_Package_-_Getting_started)
+- Load program from SD card to DDR and execute it
+- Command line with tab completion and "up arrow" history
+- Super simple, hackable code: <2k lines of code plus [ST
+  HAL](https://wiki.st.com/stm32mpu/wiki/STM32CubeMP13_Package_-_Getting_started)
+- All features optional and easily removed
 
 ### Hardware setup
 
@@ -52,8 +53,9 @@ Features include:
    number of blocks (34). You'll use these with the `load_sd` command in the
    next section.
 
-2. The initial boot can be done USB-C with DIP switch set to `BOOT = 000` (see
-   below for initial boot alternatives):
+2. The initial boot can be done with USB-C with DIP switch set to `BOOT = 000`
+   (see below for [initial boot
+   alternatives](https://github.com/js216/stm32mp135-bootloader#initial-boot-alternatives)):
 
        STM32_Programmer_CLI.exe -c port=usb1 -w scripts/flash.tsv
 
@@ -68,8 +70,8 @@ it from [here](http://www.chrysocome.net/dd)) to write the SD card image:
     dd if=build/sdcard.img of=/dev/sdc # on Linux
     dd if=build/sdcard.img of=\\.\E:   # on Windows
 
-⚠ WARNING: This will erase all data on the target device, so double-check that it
-is the newly-enumerated SD card and contains no important files.
+⚠ WARNING: This will erase all data on the target device, so double-check that
+it is the newly-enumerated SD card and contains no important files.
 
 After writing the SD card, open the serial console (115200 baud) and load a
 program into DDR using the `load_sd` command, then execute it with `jump`:
@@ -77,8 +79,8 @@ program into DDR using the `load_sd` command, then execute it with `jump`:
     > load_sd 34 324
     > jump
 
-This runs the blink program: it prints diagnostics and keeps blinking the red
-led. Success!
+This runs the blink program: it just blinks the red led, and prints a message to
+UART4. Success!
 
 To run other programs, generate an SD card image containing the bootloader and
 the program. For example, the blink SD image was created with:
@@ -88,6 +90,25 @@ the program. For example, the blink SD image was created with:
 The script prints a table of where each program is installed on the SD card. Use
 the shown block number and size with `load_sd` and `jump` to load and run any
 program.
+
+### Booting Linux
+
+Running Linux on 32-bit Arm is no different from other "bare-metal" programs:
+you load it into memory together with any optional parameters and jump to it.
+Do not allow yourself to be misled into thinking it's some kind of a difficult,
+mystical process---the kernel will run so long as a few conditions are
+satisfied:
+
+- DTB is loaded in memory and register `r2` points to that address
+- DDR initialized, MMU and caches disabled, interrupts off, SVC mode
+- Allow non-secure access to peripherals used by the kernel (clocks, DDR, etc.)
+- Init program provided, e.g. from a simple filesystem
+
+This bootloader takes care of all of these details. Use the bootloader command
+`two` to load both the kernel and DTB into RAM and jump to it. See
+[this](https://embd.cc/build-linux-for-stm32mp135-in-under-50-lines-of-makefile)
+blog post for a more in-depth explanation on how to put together a complete
+Linux system that runs on the STM32MP135 evaluation board.
 
 ### Configuration Flags
 
@@ -130,6 +151,7 @@ require the STM32CubeProgrammer:
 
 ### References
 
+- [Build Linux for STM32MP135 in under 50 Lines of Makefile](https://embd.cc/build-linux-for-stm32mp135-in-under-50-lines-of-makefile)
 - [SD card on bare-metal STM32MP135](https://embd.cc/sdcard-on-bare-metal-stm32mp135)
 - [Unsecuring STM32MP135 TrustZone](https://embd.cc/unsecuring-stm32mp135-trustzone)
 - [Linux Bring-Up on a Custom STM32MP135 Board](https://embd.cc/linux-bringup-on-custom-stm32mp135-board)
