@@ -4,17 +4,18 @@
  * @file cmd.c
  * @brief Command line interface
  * @author Jakob Kastelic
- * @copyright 2025 Stanford Research Systems, Inc.
+ * @copyright 2025-2026 Stanford Research Systems, Inc.
  */
 
-#include "stm32mp135fxx_ca7.h"
 #include "cmd.h"
 #include "boot.h"
 #include "ddr.h"
 #include "defaults.h"
 #include "diag.h"
+#include "fmc.h"
 #include "printf.h"
 #include "sd.h"
+#include "stm32mp135fxx_ca7.h"
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -67,7 +68,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"ddr", DEF_PRINT_LEN, 0, DEF_LINUX_ADDR},
-            }, .num_defaults = 1,
+            },                                    .num_defaults = 1,
      .handler      = ddr_print_cmd,
      },
 
@@ -78,7 +79,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"image", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
-            },                                               .num_defaults = 1,
+            }, .num_defaults = 1,
      .handler      = load_sd_cmd,
      },
 
@@ -89,7 +90,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"target", 0, 0, DEF_LINUX_ADDR},
-            },              .num_defaults = 1,
+            },                       .num_defaults = 1,
      .handler      = boot_jump,
      },
 
@@ -110,8 +111,26 @@ static const struct cmd cmd_list[] = {
             (const struct cmd_defaults[]){
                 {"linux", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
                 {"dtb", DEF_DTB_LEN, DEF_DTB_BLK, DEF_DTB_ADDR},
-            },                        .num_defaults = 2,
+            },                                    .num_defaults = 2,
      .handler      = cmd_load_two,
+     },
+
+    {
+     .name         = "align_test",
+     .syntax       = "",
+     .summary      = "Run DDR aligned read/write tests",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = ddr_align_test,
+     },
+
+    {
+     .name         = "fmc_init",
+     .syntax       = "",
+     .summary      = "Initialize FMC NAND controller",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = fmc_init,
      },
 };
 
@@ -469,20 +488,23 @@ void cmd_help(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
 void cmd_reset(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
-    (void)argc; (void)arg1; (void)arg2; (void)arg3;
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
 
-    my_printf("System reset requested...\r\n");
+   my_printf("System reset requested...\r\n");
 
-    /* Ensure previous writes complete */
-    __asm__ volatile ("dsb sy");  // data synchronization barrier
+   /* Ensure previous writes complete */
+   __asm__ volatile("dsb sy"); // data synchronization barrier
 
-    /* Trigger a reset: set SYSRESETREQ via RCC MP_GRSTCSETR */
-    RCC->MP_GRSTCSETR = RCC_MP_GRSTCSETR_MPSYSRST;  // reset entire system
+   /* Trigger a reset: set SYSRESETREQ via RCC MP_GRSTCSETR */
+   RCC->MP_GRSTCSETR = RCC_MP_GRSTCSETR_MPSYSRST; // reset entire system
 
-    /* Wait indefinitely for reset to occur */
-    while (1) {
-        __asm__ volatile("wfe");  // wait for event (low-power idle)
-    }
+   /* Wait indefinitely for reset to occur */
+   while (1) {
+      __asm__ volatile("wfe"); // wait for event (low-power idle)
+   }
 }
 
 void cmd_load_two(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)

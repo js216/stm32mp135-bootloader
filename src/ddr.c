@@ -99,3 +99,35 @@ void ddr_print_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    ddr_print(addr, n);
 }
+
+void ddr_align_test(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+    (void)argc; (void)arg1; (void)arg2; (void)arg3;
+    uint32_t sctlr;
+
+    // 1. READ SCTLR
+    __asm__ volatile("mrc p15, 0, %0, c1, c0, 0" : "=r" (sctlr));
+    
+    // 2. DISABLE CACHE (Bit 2) AND MMU (Bit 0)
+    uint32_t sctlr_disabled = sctlr & ~((1 << 2) | (1 << 0));
+    __asm__ volatile("mcr p15, 0, %0, c1, c0, 0" : : "r" (sctlr_disabled));
+    __asm__ volatile("isb sy"); // Instruction sync barrier
+
+    my_printf("!!! CACHE DISABLED !!! Testing raw hardware wires...\r\n");
+
+    volatile uint8_t *p8 = (volatile uint8_t *)0xc0001000;
+    
+    // Perform a partial write
+    p8[0] = 0xAA;
+    __asm__ volatile("dsb sy"); // Force pin toggle
+    
+    if (p8[0] != 0xAA) {
+        my_printf("FAILURE DETECTED: Byte 0 is 0x%02x (expected 0xAA)\r\n", p8[0]);
+    } else {
+        my_printf("SUCCESS: Byte 0 worked without cache.\r\n");
+    }
+
+    // 3. RE-ENABLE CACHE
+    __asm__ volatile("mcr p15, 0, %0, c1, c0, 0" : : "r" (sctlr));
+    __asm__ volatile("isb sy");
+}

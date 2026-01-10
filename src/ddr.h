@@ -14,5 +14,6 @@
 
 void ddr_init(void);
 void ddr_print_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+void ddr_align_test(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 
 #endif // DDR_H
