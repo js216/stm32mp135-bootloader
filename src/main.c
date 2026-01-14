@@ -10,6 +10,7 @@
 #include "cmd.h"
 #include "ddr.h"
 #include "sd.h"
+#include "lcd.h"
 #include "setup.h"
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx_hal.h"
@@ -39,6 +40,7 @@ int main(void)
    ddr_init();
    sd_init();
    usb_init();
+   lcd_init();
    cmd_init();
 
    while (1) {

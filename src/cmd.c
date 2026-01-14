@@ -13,6 +13,7 @@
 #include "defaults.h"
 #include "diag.h"
 #include "fmc.h"
+#include "lcd.h"
 #include "printf.h"
 #include "sd.h"
 #include "stm32mp135fxx_ca7.h"
@@ -131,6 +132,15 @@ static const struct cmd cmd_list[] = {
      .defaults     = NULL,
      .num_defaults = 0,
      .handler      = fmc_init,
+     },
+
+    {
+     .name         = "backlight",
+     .syntax       = "",
+     .summary      = "Set LCD backlight (0 to 100)",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = lcd_backlight,
      },
 };
 
