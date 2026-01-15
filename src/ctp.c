@@ -9,11 +9,42 @@
 
 #include "ctp.h"
 #include "irq.h"
+#include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_i2c.h"
 #include "stm32mp13xx_hal_gpio.h"
 #include "stm32mp13xx_hal_rcc.h"
 #include "printf.h"
 #include <string.h>
+
+#ifdef EVB
+#define CTP_INT_PORT    GPIOF
+#define CTP_INT_PIN     GPIO_PIN_5
+#define CTP_SCL_PORT    GPIOD
+#define CTP_SCL_PIN     GPIO_PIN_1
+#define CTP_SDA_PORT    GPIOH
+#define CTP_SDA_PIN     GPIO_PIN_6
+#define CTP_AF          GPIO_AF4_I2C5
+#define CTP_RST_PORT    GPIOH
+#define CTP_RST_PIN     GPIO_PIN_2
+#define CTP_INT_IRQn    EXTI5_IRQn
+#define CTP_INT_PIN_NUM 5
+#define EXTI_IRQHandler EXTI5_IRQHandler
+#define unused_handler  EXTI12_IRQHandler
+#else
+#define CTP_INT_PORT    GPIOH
+#define CTP_INT_PIN     GPIO_PIN_12
+#define CTP_SCL_PORT    GPIOH
+#define CTP_SCL_PIN     GPIO_PIN_13
+#define CTP_SDA_PORT    GPIOF
+#define CTP_SDA_PIN     GPIO_PIN_3
+#define CTP_AF          GPIO_AF4_I2C5
+#define CTP_RST_PORT    GPIOB
+#define CTP_RST_PIN     GPIO_PIN_7
+#define CTP_INT_IRQn    EXTI12_IRQn
+#define CTP_INT_PIN_NUM 12
+#define EXTI_IRQHandler EXTI12_IRQHandler
+#define unused_handler  EXTI5_IRQHandler
+#endif
 
 #define CTP_I2C_ADDRESS    0x5D
 #define CTP_TOUCH_DATA_LEN 41
@@ -23,14 +54,6 @@
 #define TOUCH_POINT_GET_NUM(T) ((T) & 0x0F)
 #define TOUCH_POINT_GET_X(T)   (((T).XH << 8) | (T).XL)
 #define TOUCH_POINT_GET_Y(T)   (((T).YH << 8) | (T).YL)
-
-#define CTP_INT_PORT GPIOH
-#define CTP_INT_PIN  GPIO_PIN_12
-#define CTP_SCL_PORT GPIOH
-#define CTP_SCL_PIN  GPIO_PIN_13
-#define CTP_SDA_PORT GPIOF
-#define CTP_SDA_PIN  GPIO_PIN_3
-#define CTP_AF       GPIO_AF4_I2C5
 
 struct ctp_touch_point {
    uint8_t TRACK_ID;
@@ -56,40 +79,16 @@ static uint8_t touch_buf[CTP_TOUCH_DATA_LEN];
 static int last_x = -1;
 static int last_y = -1;
 
-void EXTI12_IRQHandler(void)
+void EXTI_IRQHandler(void)
 {
-   // clear pending bit manually
-   if (EXTI->FPR1 & (1 << 12)) {
-      EXTI->FPR1 = (1 << 12);
-
-      // call your touch handler
+   if (EXTI->FPR1 & (1 << CTP_INT_PIN_NUM)) {
+      EXTI->FPR1 = (1 << CTP_INT_PIN_NUM);
       ctp_print_last_touch();
    }
 }
 
-static void ctp_pin_setup(void)
+void unused_handler()
 {
-   GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-   // INT pin input interrupt
-   GPIO_InitStruct.Pin = CTP_INT_PIN;
-   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-   GPIO_InitStruct.Pull = GPIO_NOPULL;
-   HAL_GPIO_Init(CTP_INT_PORT, &GPIO_InitStruct);
-   IRQ_SetPriority(EXTI12_IRQn, PRIO_GPIO);
-   IRQ_Enable(EXTI12_IRQn);
-
-   // SCL pin AF4 open-drain
-   GPIO_InitStruct.Pin = CTP_SCL_PIN;
-   GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-   GPIO_InitStruct.Pull = GPIO_PULLUP;
-   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-   GPIO_InitStruct.Alternate = CTP_AF;
-   HAL_GPIO_Init(CTP_SCL_PORT, &GPIO_InitStruct);
-
-   // SDA pin AF4 open-drain
-   GPIO_InitStruct.Pin = CTP_SDA_PIN;
-   HAL_GPIO_Init(CTP_SDA_PORT, &GPIO_InitStruct);
 }
 
 static int ctp_read_touch(void)
@@ -150,13 +149,55 @@ static uint32_t i2c5_calc_timing_100kHz(void)
    return (presc << 28) | (sdel << 20) | (ddel << 16) | (sclh << 8) | scll;
 }
 
+static void ctp_pin_setup(void)
+{
+   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+   /* --- INT pin: output low for I2C address select --- */
+   GPIO_InitStruct.Pin = CTP_INT_PIN;
+   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+   HAL_GPIO_Init(CTP_INT_PORT, &GPIO_InitStruct);
+   HAL_GPIO_WritePin(CTP_INT_PORT, CTP_INT_PIN, GPIO_PIN_RESET);
+
+   /* --- RST pin: output, hold low --- */
+   GPIO_InitStruct.Pin = CTP_RST_PIN;
+   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+   HAL_GPIO_Init(CTP_RST_PORT, &GPIO_InitStruct);
+   HAL_GPIO_WritePin(CTP_RST_PORT, CTP_RST_PIN, GPIO_PIN_RESET);
+
+   HAL_Delay(10);
+
+   /* --- release reset while INT still low --- */
+   HAL_GPIO_WritePin(CTP_RST_PORT, CTP_RST_PIN, GPIO_PIN_SET);
+   HAL_Delay(50);
+
+   /* --- I2C pins: AF open-drain --- */
+   GPIO_InitStruct.Pin = CTP_SCL_PIN;
+   GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+   GPIO_InitStruct.Pull = GPIO_PULLUP;
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+   GPIO_InitStruct.Alternate = CTP_AF;
+   HAL_GPIO_Init(CTP_SCL_PORT, &GPIO_InitStruct);
+
+   GPIO_InitStruct.Pin = CTP_SDA_PIN;
+   HAL_GPIO_Init(CTP_SDA_PORT, &GPIO_InitStruct);
+
+   /* --- INT pin: switch to EXTI after reset --- */
+   GPIO_InitStruct.Pin = CTP_INT_PIN;
+   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   HAL_GPIO_Init(CTP_INT_PORT, &GPIO_InitStruct);
+}
 
 void ctp_init(void)
 {
    HAL_StatusTypeDef ret;
 
-   ctp_pin_setup();  // configure clocks + GPIOs
+   ctp_pin_setup();
 
    // enable I2C5 clock
    __HAL_RCC_I2C5_CLK_ENABLE();
@@ -210,6 +251,10 @@ void ctp_init(void)
       my_printf("CTP init failed: bad ID %c%c%c\r\n", touch_buf[0], touch_buf[1], touch_buf[2]);
       return;
    }
+
+   // enable touch interrupts
+   IRQ_SetPriority(CTP_INT_IRQn, PRIO_GPIO);
+   IRQ_Enable(CTP_INT_IRQn);
 }
 
 static void ctp_print_last_touch(void)
@@ -217,7 +262,6 @@ static void ctp_print_last_touch(void)
    int ret = ctp_read_touch();
    if (ret < 0) return;
    if (ret == 0) {
-      my_printf("CTP: no touch\r\n");
       last_x = last_y = -1;
       return;
    }
@@ -225,7 +269,6 @@ static void ctp_print_last_touch(void)
    struct ctp_touch_data *data = (struct ctp_touch_data *)touch_buf;
    int num = TOUCH_POINT_GET_NUM(data->STATUS);
    if (num == 0) {
-      my_printf("CTP: no touch\r\n");
       last_x = last_y = -1;
       return;
    }

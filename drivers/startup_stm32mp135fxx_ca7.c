@@ -282,10 +282,6 @@ static void FDCAN2_IT1_IRQHandler(void)
 {
 }
 
-static void EXTI5_IRQHandler(void)
-{
-}
-
 static void TIM1_BRK_IRQHandler(void)
 {
 }

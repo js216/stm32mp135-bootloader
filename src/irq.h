@@ -39,5 +39,6 @@ void SecurePhysicalTimer_IRQHandler(void);
 void EXTI8_IRQHandler(void);
 void UART4_IRQHandler(void);
 void EXTI12_IRQHandler(void);
+void EXTI5_IRQHandler(void);
 
 #endif // IRQ_H
