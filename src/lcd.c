@@ -8,6 +8,7 @@
  */
 
 #include "lcd.h"
+#include "ctp.h"
 #include "printf.h"
 #include <stdint.h>
 #include "stm32mp13xx_hal_gpio.h"

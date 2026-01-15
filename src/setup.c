@@ -240,6 +240,12 @@ void perclk_init(void)
       ERROR("I2C4");
    }
 
+   pclk.PeriphClockSelection = RCC_PERIPHCLK_I2C5;
+   pclk.I2c5ClockSelection   = RCC_I2C5CLKSOURCE_HSI;
+   if (HAL_RCCEx_PeriphCLKConfig(&pclk) != HAL_OK) {
+      ERROR("I2C5");
+   }
+
    pclk.PeriphClockSelection = RCC_PERIPHCLK_ADC2;
    pclk.Adc2ClockSelection   = RCC_ADC2CLKSOURCE_PER;
    if (HAL_RCCEx_PeriphCLKConfig(&pclk) != HAL_OK) {
