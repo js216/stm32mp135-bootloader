@@ -48,7 +48,7 @@ struct ctp_touch_data {
 };
 
 // global variables
-extern I2C_HandleTypeDef hi2c5;
+static I2C_HandleTypeDef hi2c5;
 static uint8_t touch_buf[CTP_TOUCH_DATA_LEN];
 static int last_x = -1;
 static int last_y = -1;

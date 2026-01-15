@@ -165,7 +165,7 @@ SECTIONS
        TTB = .;
        . = . + TTB_L1_SIZE;
        . = . + TTB_L2_SIZE * 4;
-    } > RAM
+    } > DDR_BASE
 
 
     /* User_heap_stack section, used to check that there is enough RAM left */

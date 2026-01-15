@@ -385,4 +385,21 @@ void gic_init(void)
    GICInterface->PMR = 0xFFU;
 }
 
+void mmu_init(void)
+{
+#ifdef MMU_USE
+   /* Create Translation Table */
+   MMU_CreateTranslationTable();
+
+   /* Enable MMU */
+   MMU_Enable();
+#endif
+
+   /* Enable Caches */
+#ifdef CACHE_USE
+   L1C_EnableCaches();
+#endif
+   L1C_EnableBTAC();
+}
+
 // end file setup.c

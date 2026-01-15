@@ -212,6 +212,7 @@ void lcd_init(void)
 {
    lcd_backlight_init();
    lcd_panel_init();
+   ctp_init();
 }
 
 void lcd_backlight(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)

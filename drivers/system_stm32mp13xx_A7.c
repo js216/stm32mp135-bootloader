@@ -406,20 +406,6 @@ void SystemInit(void)
    __FPU_Enable();
 #endif
 
-#ifdef MMU_USE
-   /* Create Translation Table */
-   MMU_CreateTranslationTable();
-
-   /* Enable MMU */
-   MMU_Enable();
-#endif
-
-   /* Enable Caches */
-#ifdef CACHE_USE
-   L1C_EnableCaches();
-#endif
-   L1C_EnableBTAC();
-
 #if (__GIC_PRESENT == 1)
    uint32_t i;
 

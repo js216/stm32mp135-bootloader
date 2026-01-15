@@ -23,6 +23,7 @@ void etzpc_init(void);
 void gpio_init(void);
 void uart4_init(void);
 void gic_init(void);
+void mmu_init(void);
 void usb_init(void);
 
 #endif // SETUP_H

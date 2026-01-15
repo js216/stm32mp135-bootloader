@@ -13,6 +13,7 @@
 #include "defaults.h"
 #include "diag.h"
 #include "fmc.h"
+#include "setup.h"
 #include "lcd.h"
 #include "printf.h"
 #include "sd.h"

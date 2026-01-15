@@ -38,6 +38,7 @@ int main(void)
    gic_init();
    gpio_init();
    ddr_init();
+   mmu_init();
    sd_init();
    usb_init();
    cmd_init();
