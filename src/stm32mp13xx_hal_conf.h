@@ -36,6 +36,7 @@
 #define HAL_DDR_MODULE_ENABLED
 #define HAL_NAND_MODULE_ENABLED
 #define HAL_TIM_MODULE_ENABLED
+#define HAL_LTDC_MODULE_ENABLED
 
 #define USE_RTOS                         0
 #define USE_SD_TRANSCEIVER               0
@@ -45,5 +46,12 @@
 #define USE_HAL_I2C_REGISTER_CALLBACKS   0
 #define USE_HAL_NAND_REGISTER_CALLBACKS  0
 #define USE_HAL_TIM_REGISTER_CALLBACKS   0
+#define USE_HAL_LTDC_REGISTER_CALLBACKS  0
+
+#ifdef EVB
+#define USE_STPMIC1x 1
+#else
+#define USE_STPMIC1x 0
+#endif
 
 #endif /* __STM32MP13xx_HAL_CONF_H */

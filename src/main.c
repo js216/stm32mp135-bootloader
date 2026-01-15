@@ -40,7 +40,6 @@ int main(void)
    ddr_init();
    sd_init();
    usb_init();
-   lcd_init();
    cmd_init();
 
    while (1) {

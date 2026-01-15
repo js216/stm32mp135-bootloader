@@ -39,7 +39,7 @@ Features include:
 1. To compile the program, just run Make:
 
        cd msc_boot
-       make CFLAGS_EXTRA=-DUSE_STPMIC1x=1
+       make CFLAGS_EXTRA=-DEVB
 
    If everything goes well, it should print which binaries were included in the
    generated SD card image:
@@ -116,9 +116,8 @@ Several flags control the build process, depending on what features are desired
 in the final executable. Pass them to make via the `CFLAGS_EXTRA=-D<flag>`
 mechanism as shown above. The `<flag>` can be one of:
 
-- `USE_STPMIC1x`: Enable this (set to `1`) if your board includes the STPMIC1
-  PMIC (true for the official eval board). Disable it (set to `0`) for simple
-  custom boards that power the STM32MP135 directly.
+- `EVB`: Define this to run bootloader on eval board. This enables STPMIC1
+  support and sets appropriate LCD display parameters.
 
 Other features can be disabled just by removing them from the `main()` function:
 
