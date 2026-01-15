@@ -18,7 +18,8 @@ enum {
    PRIO_SD     = 1,
    PRIO_USB    = 5,
    PRIO_UART   = 7,
-   PRIO_TICK   = 15,
+   PRIO_TICK   = 10,
+   PRIO_GPIO   = 15,
 };
 
 void reset_handler(void) __attribute__((naked, target("arm")));
@@ -37,5 +38,6 @@ void SDMMC1_IRQHandler(void);
 void SecurePhysicalTimer_IRQHandler(void);
 void EXTI8_IRQHandler(void);
 void UART4_IRQHandler(void);
+void EXTI12_IRQHandler(void);
 
 #endif // IRQ_H

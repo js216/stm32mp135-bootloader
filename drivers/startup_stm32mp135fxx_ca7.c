@@ -488,10 +488,6 @@ static void USBH_PORT2_IRQHandler(void)
 {
 }
 
-static void EXTI12_IRQHandler(void)
-{
-}
-
 static void EXTI13_IRQHandler(void)
 {
 }

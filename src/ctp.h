@@ -10,7 +10,8 @@
 #ifndef CTP_H
 #define CTP_H
 
+#include <stdint.h>
+
 void ctp_init(void);
-void ctp_print_last_touch(void);
 
 #endif // CTP_H

@@ -13,7 +13,6 @@
 #include <stdint.h>
 
 void lcd_init(void);
-
 void lcd_backlight(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 
 #endif // LCD_H

@@ -220,9 +220,6 @@ void lcd_backlight(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg2;
    (void)arg3;
 
-   // TODO: move to main.c
-   lcd_init();
-
    if (argc > 0) {
       if (arg1 <= 100U) {
          __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 
