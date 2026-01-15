@@ -27,6 +27,145 @@
 #define  IMAGE_HOR_SIZE    320
 #define  IMAGE_VER_SIZE    240
 
+#ifdef EVB
+#define LCD_BL_PORT    GPIOE
+#define LCD_BL_PIN     GPIO_PIN_12
+#define LCD_CLK_PORT   GPIOD
+#define LCD_CLK_PIN    GPIO_PIN_9
+#define LCD_CLK_AF     GPIO_AF13_LCD
+#define LCD_HSYNC_PORT GPIOC
+#define LCD_HSYNC_PIN  GPIO_PIN_6
+#define LCD_HSYNC_AF   GPIO_AF14_LCD
+#define LCD_VSYNC_PORT GPIOG
+#define LCD_VSYNC_PIN  GPIO_PIN_4
+#define LCD_VSYNC_AF   GPIO_AF11_LCD
+#define LCD_DE_PORT    GPIOH
+#define LCD_DE_PIN     GPIO_PIN_9
+#define LCD_DE_AF      GPIO_AF11_LCD
+#define LCD_R2_PORT    GPIOG
+#define LCD_R2_PIN     GPIO_PIN_7
+#define LCD_R2_AF      GPIO_AF14_LCD
+#define LCD_R3_PORT    GPIOB
+#define LCD_R3_PIN     GPIO_PIN_12
+#define LCD_R3_AF      GPIO_AF13_LCD
+#define LCD_R4_PORT    GPIOD
+#define LCD_R4_PIN     GPIO_PIN_14
+#define LCD_R4_AF      GPIO_AF14_LCD
+#define LCD_R5_PORT    GPIOE
+#define LCD_R5_PIN     GPIO_PIN_7
+#define LCD_R5_AF      GPIO_AF14_LCD
+#define LCD_R6_PORT    GPIOE
+#define LCD_R6_PIN     GPIO_PIN_13
+#define LCD_R6_AF      GPIO_AF14_LCD
+#define LCD_R7_PORT    GPIOE
+#define LCD_R7_PIN     GPIO_PIN_9
+#define LCD_R7_AF      GPIO_AF14_LCD
+#define LCD_G2_PORT    GPIOH
+#define LCD_G2_PIN     GPIO_PIN_3
+#define LCD_G2_AF      GPIO_AF14_LCD
+#define LCD_G3_PORT    GPIOF
+#define LCD_G3_PIN     GPIO_PIN_3
+#define LCD_G3_AF      GPIO_AF14_LCD
+#define LCD_G4_PORT    GPIOD
+#define LCD_G4_PIN     GPIO_PIN_5
+#define LCD_G4_AF      GPIO_AF14_LCD
+#define LCD_G5_PORT    GPIOG
+#define LCD_G5_PIN     GPIO_PIN_0
+#define LCD_G5_AF      GPIO_AF14_LCD
+#define LCD_G6_PORT    GPIOC
+#define LCD_G6_PIN     GPIO_PIN_7
+#define LCD_G6_AF      GPIO_AF14_LCD
+#define LCD_G7_PORT    GPIOA
+#define LCD_G7_PIN     GPIO_PIN_15
+#define LCD_G7_AF      GPIO_AF11_LCD
+#define LCD_B2_PORT    GPIOD
+#define LCD_B2_PIN     GPIO_PIN_10
+#define LCD_B2_AF      GPIO_AF14_LCD
+#define LCD_B3_PORT    GPIOF
+#define LCD_B3_PIN     GPIO_PIN_2
+#define LCD_B3_AF      GPIO_AF14_LCD
+#define LCD_B4_PORT    GPIOH
+#define LCD_B4_PIN     GPIO_PIN_4
+#define LCD_B4_AF      GPIO_AF11_LCD
+#define LCD_B5_PORT    GPIOE
+#define LCD_B5_PIN     GPIO_PIN_0
+#define LCD_B5_AF      GPIO_AF14_LCD
+#define LCD_B6_PORT    GPIOB
+#define LCD_B6_PIN     GPIO_PIN_6
+#define LCD_B6_AF      GPIO_AF14_LCD
+#define LCD_B7_PORT    GPIOF
+#define LCD_B7_PIN     GPIO_PIN_1
+#define LCD_B7_AF      GPIO_AF13_LCD
+#else
+#define LCD_BL_PORT    GPIOB
+#define LCD_BL_PIN     GPIO_PIN_15
+#define LCD_CLK_PORT   GPIOD
+#define LCD_CLK_PIN    GPIO_PIN_9
+#define LCD_CLK_AF     GPIO_AF13_LCD
+#define LCD_HSYNC_PORT GPIOE
+#define LCD_HSYNC_PIN  GPIO_PIN_1
+#define LCD_HSYNC_AF   GPIO_AF9_LCD
+#define LCD_VSYNC_PORT GPIOE
+#define LCD_VSYNC_PIN  GPIO_PIN_12
+#define LCD_VSYNC_AF   GPIO_AF9_LCD
+#define LCD_DE_PORT    GPIOG
+#define LCD_DE_PIN     GPIO_PIN_6
+#define LCD_DE_AF      GPIO_AF13_LCD
+#define LCD_R2_PORT    GPIO_NONE
+#define LCD_R2_PIN     0
+#define LCD_R2_AF      0
+#define LCD_R3_PORT    GPIOD
+#define LCD_R3_PIN     GPIO_PIN_9
+#define LCD_R3_AF      GPIO_AF13_LCD
+#define LCD_R4_PORT    GPIOE
+#define LCD_R4_PIN     GPIO_PIN_3
+#define LCD_R4_AF      GPIO_AF13_LCD
+#define LCD_R5_PORT    GPIOF
+#define LCD_R5_PIN     GPIO_PIN_5
+#define LCD_R5_AF      GPIO_AF14_LCD
+#define LCD_R6_PORT    GPIOF
+#define LCD_R6_PIN     GPIO_PIN_0
+#define LCD_R6_AF      GPIO_AF13_LCD
+#define LCD_R7_PORT    GPIOF
+#define LCD_R7_PIN     GPIO_PIN_6
+#define LCD_R7_AF      GPIO_AF13_LCD
+#define LCD_G2_PORT    GPIOF
+#define LCD_G2_PIN     GPIO_PIN_7
+#define LCD_G2_AF      GPIO_AF14_LCD
+#define LCD_G3_PIN     GPIO_PIN_6
+#define LCD_G3_AF      GPIO_AF14_LCD
+#define LCD_G4_PORT    GPIOG
+#define LCD_G4_PIN     GPIO_PIN_5
+#define LCD_G4_AF      GPIO_AF11_LCD
+#define LCD_G5_PORT    GPIOG
+#define LCD_G5_PIN     GPIO_PIN_0
+#define LCD_G5_AF      GPIO_AF14_LCD
+#define LCD_G6_PORT    GPIOA
+#define LCD_G6_PIN     GPIO_PIN_12
+#define LCD_G6_AF      GPIO_AF14_LCD
+#define LCD_G7_PORT    GPIOA
+#define LCD_G7_PIN     GPIO_PIN_15
+#define LCD_G7_AF      GPIO_AF11_LCD
+#define LCD_B2_PORT    GPIO_NONE
+#define LCD_B2_PIN     0
+#define LCD_B2_AF      0
+#define LCD_B3_PORT    GPIOG
+#define LCD_B3_PIN     GPIO_PIN_15
+#define LCD_B3_AF      GPIO_AF14_LCD
+#define LCD_B4_PORT    GPIOB
+#define LCD_B4_PIN     GPIO_PIN_2
+#define LCD_B4_AF      GPIO_AF14_LCD
+#define LCD_B5_PORT    GPIOH
+#define LCD_B5_PIN     GPIO_PIN_9
+#define LCD_B5_AF      GPIO_AF9_LCD
+#define LCD_B6_PORT    GPIOF
+#define LCD_B6_PIN     GPIO_PIN_4
+#define LCD_B6_AF      GPIO_AF13_LCD
+#define LCD_B7_PORT    GPIOB
+#define LCD_B7_PIN     GPIO_PIN_6
+#define LCD_B7_AF      GPIO_AF14_LCD
+#endif
+
 struct lcd_pin_cfg {
    GPIO_TypeDef *port;
    uint16_t pin;
@@ -42,12 +181,12 @@ static void lcd_backlight_init(void)
    __HAL_RCC_TIM1_CLK_ENABLE();
 
    GPIO_InitTypeDef gpio;
-   gpio.Pin       = GPIO_PIN_15;
+   gpio.Pin       = LCD_BL_PIN;
    gpio.Mode      = GPIO_MODE_AF_PP;
    gpio.Pull      = GPIO_NOPULL;
    gpio.Speed     = GPIO_SPEED_FREQ_LOW;
    gpio.Alternate = GPIO_AF1_TIM1;
-   HAL_GPIO_Init(GPIOB, &gpio);
+   HAL_GPIO_Init(LCD_BL_PORT, &gpio);
 
    htim1.Instance = TIM1;
    htim1.Init.Prescaler         = 99U;
@@ -75,52 +214,30 @@ static void lcd_backlight_init(void)
 static void lcd_panel_pin_setup(void)
 {
    static const struct lcd_pin_cfg pins[] = {
-#ifdef EVB
-      { GPIOD, GPIO_PIN_9,  GPIO_AF13_LCD }, // CLK
-      { GPIOC, GPIO_PIN_6,  GPIO_AF14_LCD }, // HSYNC
-      { GPIOG, GPIO_PIN_4,  GPIO_AF11_LCD }, // VSYNC
-      { GPIOH, GPIO_PIN_9,  GPIO_AF11_LCD }, // DE
-      { GPIOG, GPIO_PIN_7,  GPIO_AF14_LCD }, // R2
-      { GPIOB, GPIO_PIN_12, GPIO_AF13_LCD }, // R3
-      { GPIOD, GPIO_PIN_14, GPIO_AF14_LCD }, // R4
-      { GPIOE, GPIO_PIN_7,  GPIO_AF14_LCD }, // R5
-      { GPIOE, GPIO_PIN_13, GPIO_AF14_LCD }, // R6
-      { GPIOE, GPIO_PIN_9,  GPIO_AF14_LCD }, // R7
-      { GPIOH, GPIO_PIN_3,  GPIO_AF14_LCD }, // G2
-      { GPIOF, GPIO_PIN_3,  GPIO_AF14_LCD }, // G3
-      { GPIOD, GPIO_PIN_5,  GPIO_AF14_LCD }, // G4
-      { GPIOG, GPIO_PIN_0,  GPIO_AF14_LCD }, // G5
-      { GPIOC, GPIO_PIN_7,  GPIO_AF14_LCD }, // G6
-      { GPIOA, GPIO_PIN_15, GPIO_AF11_LCD }, // G7
-      { GPIOD, GPIO_PIN_10, GPIO_AF14_LCD }, // B2
-      { GPIOF, GPIO_PIN_2,  GPIO_AF14_LCD }, // B3
-      { GPIOH, GPIO_PIN_4,  GPIO_AF11_LCD }, // B4
-      { GPIOE, GPIO_PIN_0,  GPIO_AF14_LCD }, // B5
-      { GPIOB, GPIO_PIN_6,  GPIO_AF14_LCD }, // B6
-      { GPIOF, GPIO_PIN_1,  GPIO_AF13_LCD }, // B7
-#else
-      { GPIOD, GPIO_PIN_9,  GPIO_AF13_LCD }, // CLK
-      { GPIOE, GPIO_PIN_1,  GPIO_AF9_LCD },  // HSYNC
-      { GPIOE, GPIO_PIN_12, GPIO_AF9_LCD },  // VSYNC
-      { GPIOG, GPIO_PIN_6,  GPIO_AF13_LCD }, // DE
-      { GPIOD, GPIO_PIN_9,  GPIO_AF13_LCD }, // R3
-      { GPIOE, GPIO_PIN_3,  GPIO_AF13_LCD }, // R4
-      { GPIOF, GPIO_PIN_5,  GPIO_AF14_LCD }, // R5
-      { GPIOF, GPIO_PIN_0,  GPIO_AF13_LCD }, // R6
-      { GPIOF, GPIO_PIN_6,  GPIO_AF13_LCD }, // R7
-      { GPIOF, GPIO_PIN_7,  GPIO_AF14_LCD }, // G2
-      { GPIOE, GPIO_PIN_6,  GPIO_AF14_LCD }, // G3
-      { GPIOG, GPIO_PIN_5,  GPIO_AF11_LCD }, // G4
-      { GPIOG, GPIO_PIN_0,  GPIO_AF14_LCD }, // G5
-      { GPIOA, GPIO_PIN_12, GPIO_AF14_LCD }, // G6
-      { GPIOA, GPIO_PIN_15, GPIO_AF11_LCD }, // G7
-      { GPIOG, GPIO_PIN_15, GPIO_AF14_LCD }, // B3
-      { GPIOB, GPIO_PIN_2,  GPIO_AF14_LCD }, // B4
-      { GPIOH, GPIO_PIN_9,  GPIO_AF9_LCD },  // B5
-      { GPIOF, GPIO_PIN_4,  GPIO_AF13_LCD }, // B6
-      { GPIOB, GPIO_PIN_6,  GPIO_AF14_LCD }, // B7
-#endif
+      { LCD_CLK_PORT,   LCD_CLK_PIN,   LCD_CLK_AF   },
+      { LCD_HSYNC_PORT, LCD_HSYNC_PIN, LCD_HSYNC_AF },
+      { LCD_VSYNC_PORT, LCD_VSYNC_PIN, LCD_VSYNC_AF },
+      { LCD_DE_PORT,    LCD_DE_PIN,    LCD_DE_AF    },
+      { LCD_R2_PORT,    LCD_R2_PIN,    LCD_R2_AF    },
+      { LCD_R3_PORT,    LCD_R3_PIN,    LCD_R3_AF    },
+      { LCD_R4_PORT,    LCD_R4_PIN,    LCD_R4_AF    },
+      { LCD_R5_PORT,    LCD_R5_PIN,    LCD_R5_AF    },
+      { LCD_R6_PORT,    LCD_R6_PIN,    LCD_R6_AF    },
+      { LCD_R7_PORT,    LCD_R7_PIN,    LCD_R7_AF    },
+      { LCD_G2_PORT,    LCD_G2_PIN,    LCD_G2_AF    },
+      { LCD_G3_PORT,    LCD_G3_PIN,    LCD_G3_AF    },
+      { LCD_G4_PORT,    LCD_G4_PIN,    LCD_G4_AF    },
+      { LCD_G5_PORT,    LCD_G5_PIN,    LCD_G5_AF    },
+      { LCD_G6_PORT,    LCD_G6_PIN,    LCD_G6_AF    },
+      { LCD_G7_PORT,    LCD_G7_PIN,    LCD_G7_AF    },
+      { LCD_B2_PORT,    LCD_B2_PIN,    LCD_B2_AF    },
+      { LCD_B3_PORT,    LCD_B3_PIN,    LCD_B3_AF    },
+      { LCD_B4_PORT,    LCD_B4_PIN,    LCD_B4_AF    },
+      { LCD_B5_PORT,    LCD_B5_PIN,    LCD_B5_AF    },
+      { LCD_B6_PORT,    LCD_B6_PIN,    LCD_B6_AF    },
+      { LCD_B7_PORT,    LCD_B7_PIN,    LCD_B7_AF    },
    };
+
 
    GPIO_InitTypeDef gpio;
    gpio.Mode  = GPIO_MODE_AF_PP;
@@ -144,9 +261,9 @@ static void lcd_panel_init(void)
    hLtdcHandler.Init.AccumulatedActiveH = (RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP - (uint16_t)1);
    hLtdcHandler.Init.AccumulatedActiveW = (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP - (uint16_t)1);
    hLtdcHandler.Init.TotalHeigh = (RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP +
-         RK043FN48H_VFP - (uint16_t)1);
+	 RK043FN48H_VFP - (uint16_t)1);
    hLtdcHandler.Init.TotalWidth = (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP +
-         RK043FN48H_HFP - (uint16_t)1);
+	 RK043FN48H_HFP - (uint16_t)1);
 
    /* Background value */
    hLtdcHandler.Init.Backcolor.Blue = 0;
@@ -222,8 +339,8 @@ void lcd_backlight(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    if (argc > 0) {
       if (arg1 <= 100U) {
-         __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 
-               (htim1.Init.Period + 1U) * arg1 / 100U);
+	 __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 
+	       (htim1.Init.Period + 1U) * arg1 / 100U);
       }
    }
 }
