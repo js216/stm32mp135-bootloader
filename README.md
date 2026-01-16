@@ -48,11 +48,11 @@ Features include:
 
        File                      LBA      Size       Blocks
        -------------------------------------------------------
-       main.stm32                128      100352     197
-       blink.bin                 324      16896      34
+       main.stm32                128      116736     228
+       blink.bin                 640      12800      25
 
-   Make note of the `LBA` address of the `blink.bin` program (324), and the
-   number of blocks (34). You'll use these with the `load_sd` command in the
+   Make note of the `LBA` address of the `blink.bin` program (640), and the
+   number of blocks (25). You'll use these with the `load_sd` command in the
    next section.
 
 2. The initial boot can be done with USB-C with DIP switch set to `BOOT = 000`
@@ -78,11 +78,12 @@ it is the newly-enumerated SD card and contains no important files.
 After writing the SD card, open the serial console (115200 baud) and load a
 program into DDR using the `load_sd` command, then execute it with `jump`:
 
-    > load_sd 34 324
-    > jump
+    > load_sd 25 640 0xc0008000
+    > jump 0xc0008000
 
 This runs the blink program: it just blinks the red led, and prints a message to
-UART4. Success!
+UART4. Success! (Note that `0xc0008000` is the hardcoded program start location,
+which can be changed in the linker script `test/blink.ld`.)
 
 To run other programs, generate an SD card image containing the bootloader and
 the program. For example, the blink SD image was created with:
@@ -107,7 +108,12 @@ satisfied:
 - Init program provided, e.g. from a simple filesystem
 
 This bootloader takes care of all of these details. Use the bootloader command
-`two` to load both the kernel and DTB into RAM and jump to it. See
+`two` to load both the kernel and DTB into RAM and jump to it.
+
+An example Linux distribution that works with this bootloader is provided in
+[this](https://github.com/js216/stm32mp135_test_board) repository. (Make sure
+that the Linux kernel does not do any secure monitor calls, since this
+bootloader is nonsecure only.) See
 [this](https://embd.cc/build-linux-for-stm32mp135-in-under-50-lines-of-makefile)
 blog post for a more in-depth explanation on how to put together a complete
 Linux system that runs on the STM32MP135 evaluation board.

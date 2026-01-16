@@ -11,6 +11,7 @@
 #include "defaults.h"
 #include "printf.h"
 #include "stm32mp135fxx_ca7.h"
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -37,10 +38,10 @@ void boot_jump(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)(arg3);
    uint32_t addr = DEF_LINUX_ADDR;
 
-   if ((argc == 1) && (arg1 >= DEF_LINUX_ADDR))
+   if ((argc == 1) && (arg1 >= DRAM_MEM_BASE))
       addr = arg1;
 
-   my_printf("Jumping to app...\r\n");
+   my_printf("Jumping to address 0x%" PRIX32 "...\r\n", addr);
 
    // Disable IRQ and FIQ
    __asm volatile("cpsid if\n" ::: "memory");

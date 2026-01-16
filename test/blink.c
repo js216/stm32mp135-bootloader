@@ -60,3 +60,5 @@ int main(void)
    while (1)
       blink();
 }
+
+// end file blink.c
