@@ -23,6 +23,7 @@ MEMORY {
       /* InternalMEM = SYSRAM + SRAM1 + SRAM2 + SRAM3 */
       InternalMEM (rwx)   : ORIGIN = 0x2FFE0000, LENGTH = 160K
       DDR_BASE (rwx)      : ORIGIN = 0xC0000000, LENGTH = 512M
+      DDR_HIGH (rwx)      : ORIGIN = 0xC6000000, LENGTH = 512M
 }
 
 /* Select Memory in which code has to be placed and offset of code from start of this memory */ 
@@ -165,7 +166,7 @@ SECTIONS
        TTB = .;
        . = . + TTB_L1_SIZE;
        . = . + TTB_L2_SIZE * 4;
-    } > DDR_BASE
+    } > DDR_HIGH
 
 
     /* User_heap_stack section, used to check that there is enough RAM left */

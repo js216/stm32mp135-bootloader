@@ -23,6 +23,10 @@
 #include "stm32mp13xx_ll_sdmmc.h"
 #include <inttypes.h>
 #include <stdint.h>
+#include <stdbool.h>
+
+#define BLOCK_SIZE 512U
+#define DDR_SIZE   0x20000000U // 512 MB
 
 // global variables
 SD_HandleTypeDef sd_handle;
@@ -90,8 +94,21 @@ void sd_read(uint32_t lba, uint32_t num_blocks, uint32_t dest_addr)
    if (num_blocks == 0)
       num_blocks = 1;
 
-   if (dest_addr < DRAM_MEM_BASE)
+   // starting address sanity check
+   if (dest_addr < DRAM_MEM_BASE) {
+      my_printf("Note: Adjusting DDR addr from 0x%" PRIX32 " to 0x%" PRIX32 "\r\n",
+            dest_addr, DRAM_MEM_BASE);
       dest_addr = DRAM_MEM_BASE;
+   }
+
+   // check for overflow / underflow
+   const uint64_t end_addr = (uint64_t)dest_addr + (uint64_t)num_blocks * BLOCK_SIZE;
+   const bool overfl = end_addr > (uint64_t)DRAM_MEM_BASE + DDR_SIZE;
+   const bool underfl = end_addr < DRAM_MEM_BASE;
+   if (overfl || underfl) {
+      my_printf("ERROR: SD read would overflow DDR!\r\n");
+      return;
+   }
 
    my_printf("Copying %" PRIu32 " blocks from LBA %" PRIu32
              " to DDR addr 0x%" PRIX32 " ...\r\n",

@@ -42,9 +42,6 @@
 #define LCD_DE_PORT    GPIOH
 #define LCD_DE_PIN     GPIO_PIN_9
 #define LCD_DE_AF      GPIO_AF11_LCD
-#define LCD_R2_PORT    GPIOG
-#define LCD_R2_PIN     GPIO_PIN_7
-#define LCD_R2_AF      GPIO_AF14_LCD
 #define LCD_R3_PORT    GPIOB
 #define LCD_R3_PIN     GPIO_PIN_12
 #define LCD_R3_AF      GPIO_AF13_LCD
@@ -78,9 +75,6 @@
 #define LCD_G7_PORT    GPIOA
 #define LCD_G7_PIN     GPIO_PIN_15
 #define LCD_G7_AF      GPIO_AF11_LCD
-#define LCD_B2_PORT    GPIOD
-#define LCD_B2_PIN     GPIO_PIN_10
-#define LCD_B2_AF      GPIO_AF14_LCD
 #define LCD_B3_PORT    GPIOF
 #define LCD_B3_PIN     GPIO_PIN_2
 #define LCD_B3_AF      GPIO_AF14_LCD
@@ -111,9 +105,6 @@
 #define LCD_DE_PORT    GPIOG
 #define LCD_DE_PIN     GPIO_PIN_6
 #define LCD_DE_AF      GPIO_AF13_LCD
-#define LCD_R2_PORT    GPIO_NONE
-#define LCD_R2_PIN     0
-#define LCD_R2_AF      0
 #define LCD_R3_PORT    GPIOD
 #define LCD_R3_PIN     GPIO_PIN_9
 #define LCD_R3_AF      GPIO_AF13_LCD
@@ -132,6 +123,7 @@
 #define LCD_G2_PORT    GPIOF
 #define LCD_G2_PIN     GPIO_PIN_7
 #define LCD_G2_AF      GPIO_AF14_LCD
+#define LCD_G3_PORT    GPIOE
 #define LCD_G3_PIN     GPIO_PIN_6
 #define LCD_G3_AF      GPIO_AF14_LCD
 #define LCD_G4_PORT    GPIOG
@@ -146,9 +138,6 @@
 #define LCD_G7_PORT    GPIOA
 #define LCD_G7_PIN     GPIO_PIN_15
 #define LCD_G7_AF      GPIO_AF11_LCD
-#define LCD_B2_PORT    GPIO_NONE
-#define LCD_B2_PIN     0
-#define LCD_B2_AF      0
 #define LCD_B3_PORT    GPIOG
 #define LCD_B3_PIN     GPIO_PIN_15
 #define LCD_B3_AF      GPIO_AF14_LCD
@@ -218,7 +207,6 @@ static void lcd_panel_pin_setup(void)
       { LCD_HSYNC_PORT, LCD_HSYNC_PIN, LCD_HSYNC_AF },
       { LCD_VSYNC_PORT, LCD_VSYNC_PIN, LCD_VSYNC_AF },
       { LCD_DE_PORT,    LCD_DE_PIN,    LCD_DE_AF    },
-      { LCD_R2_PORT,    LCD_R2_PIN,    LCD_R2_AF    },
       { LCD_R3_PORT,    LCD_R3_PIN,    LCD_R3_AF    },
       { LCD_R4_PORT,    LCD_R4_PIN,    LCD_R4_AF    },
       { LCD_R5_PORT,    LCD_R5_PIN,    LCD_R5_AF    },
@@ -230,7 +218,6 @@ static void lcd_panel_pin_setup(void)
       { LCD_G5_PORT,    LCD_G5_PIN,    LCD_G5_AF    },
       { LCD_G6_PORT,    LCD_G6_PIN,    LCD_G6_AF    },
       { LCD_G7_PORT,    LCD_G7_PIN,    LCD_G7_AF    },
-      { LCD_B2_PORT,    LCD_B2_PIN,    LCD_B2_AF    },
       { LCD_B3_PORT,    LCD_B3_PIN,    LCD_B3_AF    },
       { LCD_B4_PORT,    LCD_B4_PIN,    LCD_B4_AF    },
       { LCD_B5_PORT,    LCD_B5_PIN,    LCD_B5_AF    },

@@ -81,10 +81,21 @@ static int last_y = -1;
 
 void EXTI_IRQHandler(void)
 {
-   if (EXTI->FPR1 & (1 << CTP_INT_PIN_NUM)) {
+   // capture the pending flags
+   uint32_t falling_pending = EXTI->FPR1;
+   uint32_t rising_pending  = EXTI->RPR1;
+
+   // check for the specific CTP pin
+   if (falling_pending & (1 << CTP_INT_PIN_NUM)) {
       EXTI->FPR1 = (1 << CTP_INT_PIN_NUM);
       ctp_print_last_touch();
    }
+
+   // clear all other pending pins
+   if (falling_pending)
+      EXTI->FPR1 = falling_pending;
+   if (rising_pending)
+      EXTI->RPR1 = rising_pending;
 }
 
 void unused_handler()

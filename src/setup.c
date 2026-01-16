@@ -41,9 +41,25 @@ USBD_HandleTypeDef usbd_device;
 // cppcheck-suppress unusedFunction
 void UART4_IRQHandler(void)
 {
-   if (__HAL_UART_GET_FLAG(&huart4, UART_FLAG_RXNE)) {
+   uint32_t isr = huart4.Instance->ISR;
+   uint32_t cr1 = huart4.Instance->CR1;
+
+   // take character out, if any
+   if ((isr & (USART_ISR_RXNE_RXFNE)) && (cr1 & USART_CR1_RXNEIE)) {
       char byte = (char)(huart4.Instance->RDR & 0xFFU);
       cmd_take_char(byte);
+   }
+
+   // clear other interrupt flags
+   uint32_t error_mask = (USART_ISR_ORE | USART_ISR_NE | USART_ISR_FE | USART_ISR_PE);
+   if (isr & error_mask) {
+      huart4.Instance->ICR = (USART_ICR_ORECF | USART_ICR_NECF | 
+            USART_ICR_FECF | USART_ICR_PECF);
+   }
+
+   // handle IDLE line, if used
+   if (isr & USART_ISR_IDLE) {
+      huart4.Instance->ICR = USART_ICR_IDLECF;
    }
 }
 
@@ -72,8 +88,8 @@ void sysclk_init(void)
 
    /* Enable all available oscillators except LSE */
    rcc_oscinitstructure.OscillatorType =
-       (RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSE |
-        RCC_OSCILLATORTYPE_CSI | RCC_OSCILLATORTYPE_LSI);
+      (RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSE |
+       RCC_OSCILLATORTYPE_CSI | RCC_OSCILLATORTYPE_LSI);
 
    rcc_oscinitstructure.HSIState = RCC_HSI_ON;
    rcc_oscinitstructure.HSEState = RCC_HSE_ON;
@@ -137,9 +153,9 @@ void sysclk_init(void)
 
    /* Select PLLx as MPU, AXI and MCU clock sources */
    rcc_clkinitstructure.ClockType =
-       (RCC_CLOCKTYPE_MPU | RCC_CLOCKTYPE_ACLK | RCC_CLOCKTYPE_HCLK |
-        RCC_CLOCKTYPE_PCLK4 | RCC_CLOCKTYPE_PCLK5 | RCC_CLOCKTYPE_PCLK1 |
-        RCC_CLOCKTYPE_PCLK6 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3);
+      (RCC_CLOCKTYPE_MPU | RCC_CLOCKTYPE_ACLK | RCC_CLOCKTYPE_HCLK |
+       RCC_CLOCKTYPE_PCLK4 | RCC_CLOCKTYPE_PCLK5 | RCC_CLOCKTYPE_PCLK1 |
+       RCC_CLOCKTYPE_PCLK6 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3);
 
    rcc_clkinitstructure.MPUInit.MPU_Clock     = RCC_MPUSOURCE_PLL1;
    rcc_clkinitstructure.MPUInit.MPU_Div       = RCC_MPU_DIV2;
@@ -292,7 +308,7 @@ void etzpc_init(void)
 
    // unsecure peripherals
    LL_ETZPC_Set_All_PeriphProtection(
-       ETZPC, LL_ETZPC_PERIPH_PROTECTION_READ_WRITE_NONSECURE);
+         ETZPC, LL_ETZPC_PERIPH_PROTECTION_READ_WRITE_NONSECURE);
 }
 
 void gpio_init(void)
@@ -358,10 +374,10 @@ void uart4_init(void)
    if (HAL_UART_Init(&huart4) != HAL_OK)
       ERROR("UART4");
    if (HAL_UARTEx_SetTxFifoThreshold(&huart4, UART_TXFIFO_THRESHOLD_1_8) !=
-       HAL_OK)
+         HAL_OK)
       ERROR("FIFO TX Threshold");
    if (HAL_UARTEx_SetRxFifoThreshold(&huart4, UART_RXFIFO_THRESHOLD_1_8) !=
-       HAL_OK)
+         HAL_OK)
       ERROR("FIFO RX Threshold");
    if (HAL_UARTEx_DisableFifoMode(&huart4) != HAL_OK)
       ERROR("Disable FIFO");
