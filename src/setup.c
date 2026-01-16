@@ -9,6 +9,7 @@
 
 #include "setup.h"
 #include "cmd.h"
+#include "board.h"
 #include "debug.h"
 #include "irq.h"
 #include "irq_ctrl.h"

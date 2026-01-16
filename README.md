@@ -13,10 +13,12 @@ Features include:
 
 - Boot Linux: Load kernel and DTB into RAM and execute it
 - Write to SD card from USB via Mass Storage Class, like a flash drive
-- Load program from SD card to DDR and execute it
+- Load any other program from SD card to DDR and execute it
+- Set image or solid color on LCD display; control backlight; read touch (CTP)
 - Command line with tab completion and "up arrow" history
-- Super simple, hackable code: <2k lines of code plus [ST
+- Super simple, hackable code: <3k lines of code plus [ST
   HAL](https://wiki.st.com/stm32mpu/wiki/STM32CubeMP13_Package_-_Getting_started)
+- Single stage, small (<160 kB), fits into SYSRAM/SRAM
 - All features optional and easily removed
 
 ### Hardware setup

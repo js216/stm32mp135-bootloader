@@ -60,7 +60,7 @@ tidy:
 	make clean
 	mkdir -p build
 	bear --output build/compile_commands.json -- make \
-		CFLAGS_EXTRA=-DUSE_STPMIC1x=0 -j$(shell nproc) $(TARGET)
+		 -j$(shell nproc) $(TARGET)
 	run-clang-tidy -j$(shell nproc) -p build $(wildcard src/*.c) \
 		-extra-arg=-I/usr/lib/arm-none-eabi/include
 

@@ -39,6 +39,7 @@
  ******************************************************************************
  */
 
+#include "board.h"
 #include "irq.h"
 #include "irq_ctrl.h"
 #include "stm32mp13xx.h"

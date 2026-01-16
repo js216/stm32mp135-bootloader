@@ -8,6 +8,7 @@
  */
 
 #include "ctp.h"
+#include "board.h"
 #include "irq.h"
 #include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_i2c.h"
@@ -15,36 +16,6 @@
 #include "stm32mp13xx_hal_rcc.h"
 #include "printf.h"
 #include <string.h>
-
-#ifdef EVB
-#define CTP_INT_PORT    GPIOF
-#define CTP_INT_PIN     GPIO_PIN_5
-#define CTP_SCL_PORT    GPIOD
-#define CTP_SCL_PIN     GPIO_PIN_1
-#define CTP_SDA_PORT    GPIOH
-#define CTP_SDA_PIN     GPIO_PIN_6
-#define CTP_AF          GPIO_AF4_I2C5
-#define CTP_RST_PORT    GPIOH
-#define CTP_RST_PIN     GPIO_PIN_2
-#define CTP_INT_IRQn    EXTI5_IRQn
-#define CTP_INT_PIN_NUM 5
-#define EXTI_IRQHandler EXTI5_IRQHandler
-#define unused_handler  EXTI12_IRQHandler
-#else
-#define CTP_INT_PORT    GPIOH
-#define CTP_INT_PIN     GPIO_PIN_12
-#define CTP_SCL_PORT    GPIOH
-#define CTP_SCL_PIN     GPIO_PIN_13
-#define CTP_SDA_PORT    GPIOF
-#define CTP_SDA_PIN     GPIO_PIN_3
-#define CTP_AF          GPIO_AF4_I2C5
-#define CTP_RST_PORT    GPIOB
-#define CTP_RST_PIN     GPIO_PIN_7
-#define CTP_INT_IRQn    EXTI12_IRQn
-#define CTP_INT_PIN_NUM 12
-#define EXTI_IRQHandler EXTI12_IRQHandler
-#define unused_handler  EXTI5_IRQHandler
-#endif
 
 #define CTP_I2C_ADDRESS    0x5D
 #define CTP_TOUCH_DATA_LEN 41
@@ -79,7 +50,7 @@ static uint8_t touch_buf[CTP_TOUCH_DATA_LEN];
 static int last_x = -1;
 static int last_y = -1;
 
-void EXTI_IRQHandler(void)
+void ctp_irqhandler(void)
 {
    // capture the pending flags
    uint32_t falling_pending = EXTI->FPR1;
@@ -98,7 +69,7 @@ void EXTI_IRQHandler(void)
       EXTI->RPR1 = rising_pending;
 }
 
-void unused_handler()
+void ctp_unused()
 {
 }
 

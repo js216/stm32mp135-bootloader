@@ -48,10 +48,4 @@
 #define USE_HAL_TIM_REGISTER_CALLBACKS   0
 #define USE_HAL_LTDC_REGISTER_CALLBACKS  0
 
-#ifdef EVB
-#define USE_STPMIC1x 1
-#else
-#define USE_STPMIC1x 0
-#endif
-
 #endif /* __STM32MP13xx_HAL_CONF_H */

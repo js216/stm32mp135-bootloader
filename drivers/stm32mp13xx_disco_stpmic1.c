@@ -19,6 +19,7 @@
 /* Includes
  * ----------------------------------------------------------------------*/
 #include "stm32mp13xx_disco_stpmic1.h"
+#include "board.h"
 #include "debug.h"
 #include "irq.h"
 #include "stm32mp13xx_disco_bus.h"
