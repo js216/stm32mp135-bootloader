@@ -15,6 +15,7 @@
 #include "stm32mp13xx_hal_tim.h"
 #include "stm32mp13xx_hal_rcc.h"
 #include "stm32mp13xx_hal_ltdc.h"
+#include "stm32mp135fxx_ca7.h"
 
 #define  RK043FN48H_WIDTH    ((uint16_t)480)  /* LCD PIXEL WIDTH            */
 #define  RK043FN48H_HEIGHT   ((uint16_t)272)  /* LCD PIXEL HEIGHT           */
@@ -24,12 +25,12 @@
 #define  RK043FN48H_VSYNC    ((uint16_t)10)   /* Vertical synchronization   */
 #define  RK043FN48H_VBP      ((uint16_t)2)    /* Vertical back porch        */
 #define  RK043FN48H_VFP      ((uint16_t)2)    /* Vertical front porch       */
-#define  IMAGE_HOR_SIZE    320
-#define  IMAGE_VER_SIZE    240
 
 #ifdef EVB
 #define LCD_BL_PORT    GPIOE
 #define LCD_BL_PIN     GPIO_PIN_12
+#define LCD_DISP_PORT  GPIOI
+#define LCD_DISP_PIN   GPIO_PIN_7
 #define LCD_CLK_PORT   GPIOD
 #define LCD_CLK_PIN    GPIO_PIN_9
 #define LCD_CLK_AF     GPIO_AF13_LCD
@@ -93,6 +94,8 @@
 #else
 #define LCD_BL_PORT    GPIOB
 #define LCD_BL_PIN     GPIO_PIN_15
+#define LCD_DISP_PORT  GPIOG
+#define LCD_DISP_PIN   GPIO_PIN_7
 #define LCD_CLK_PORT   GPIOD
 #define LCD_CLK_PIN    GPIO_PIN_9
 #define LCD_CLK_AF     GPIO_AF13_LCD
@@ -283,11 +286,11 @@ static void lcd_panel_init(void)
    // image layer
    LTDC_LayerCfgTypeDef layer_cfg;
    layer_cfg.WindowX0 = 0;
-   layer_cfg.WindowX1 = IMAGE_HOR_SIZE;
+   layer_cfg.WindowX1 = RK043FN48H_WIDTH;
    layer_cfg.WindowY0 = 0;
-   layer_cfg.WindowY1 = IMAGE_VER_SIZE;
+   layer_cfg.WindowY1 = RK043FN48H_HEIGHT;
    layer_cfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB888;
-   layer_cfg.FBStartAdress = (uint32_t)0xc0008000; // TODO: was ST_logo_RGB888;
+   layer_cfg.FBStartAdress = DRAM_MEM_BASE;
    layer_cfg.Alpha = 255;
    layer_cfg.Alpha0 = 0;
    layer_cfg.Backcolor.Blue = 0;
@@ -304,12 +307,12 @@ static void lcd_panel_init(void)
 
    // LCD_DISP pin
    GPIO_InitTypeDef gpio;
-   gpio.Pin   = GPIO_PIN_7;
+   gpio.Pin   = LCD_DISP_PIN;
    gpio.Mode  = GPIO_MODE_OUTPUT_PP;
    gpio.Pull  = GPIO_NOPULL;
    gpio.Speed = GPIO_SPEED_FREQ_LOW;
-   HAL_GPIO_Init(GPIOG, &gpio);
-   HAL_GPIO_WritePin(GPIOG, GPIO_PIN_7, GPIO_PIN_SET);
+   HAL_GPIO_Init(LCD_DISP_PORT, &gpio);
+   HAL_GPIO_WritePin(LCD_DISP_PORT, LCD_DISP_PIN, GPIO_PIN_SET);
 }
 
 void lcd_init(void)
@@ -330,4 +333,23 @@ void lcd_backlight(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 	       (htim1.Init.Period + 1U) * arg1 / 100U);
       }
    }
+}
+
+void lcd_color(int argc, uint32_t r, uint32_t g, uint32_t b)
+{
+   (void)argc;
+   volatile uint8_t *lcd_fb = (volatile uint8_t *)DRAM_MEM_BASE;
+
+   for (uint32_t y = 0; y < RK043FN48H_HEIGHT; y++) {
+      for (uint32_t x = 0; x < RK043FN48H_WIDTH; x++) {
+	 uint32_t p = (y * RK043FN48H_WIDTH + x) * 3U;
+	 lcd_fb[p + 0] = b; // blue
+	 lcd_fb[p + 1] = g; // green
+	 lcd_fb[p + 2] = r; // red
+      }
+   }
+
+   /* make sure CPU writes reach DDR before LTDC reads */
+   L1C_CleanDCacheAll();
+   __DSB();
 }

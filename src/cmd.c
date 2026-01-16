@@ -144,6 +144,15 @@ static const struct cmd cmd_list[] = {
      .num_defaults = 0,
      .handler      = lcd_backlight,
      },
+
+    {
+     .name         = "color",
+     .syntax       = "",
+     .summary      = "Set LCD color (r, g, b)",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = lcd_color,
+     },
 };
 
 // character ring buffer

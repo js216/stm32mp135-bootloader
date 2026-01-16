@@ -14,5 +14,6 @@
 
 void lcd_init(void);
 void lcd_backlight(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+void lcd_color(int argc, uint32_t r, uint32_t g, uint32_t b);
 
 #endif // LCD_H

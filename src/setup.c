@@ -133,16 +133,16 @@ void sysclk_init(void)
    rcc_oscinitstructure.PLL3.PLLFRACV  = 0x1a04;
    rcc_oscinitstructure.PLL3.PLLMODE   = RCC_PLL_FRACTIONAL;
 
-   rcc_oscinitstructure.PLL4.PLLState  = RCC_PLL_ON;
+   rcc_oscinitstructure.PLL4.PLLState = RCC_PLL_ON;
    rcc_oscinitstructure.PLL4.PLLSource = RCC_PLL4SOURCE_HSE;
-   rcc_oscinitstructure.PLL4.PLLM      = 2;
-   rcc_oscinitstructure.PLL4.PLLN      = 40;
-   rcc_oscinitstructure.PLL4.PLLP      = 10;
-   rcc_oscinitstructure.PLL4.PLLQ      = 10;
-   rcc_oscinitstructure.PLL4.PLLR      = 10;
-   rcc_oscinitstructure.PLL4.PLLRGE    = RCC_PLL4IFRANGE_1;
-   rcc_oscinitstructure.PLL4.PLLFRACV  = 0;
-   rcc_oscinitstructure.PLL4.PLLMODE   = RCC_PLL_INTEGER;
+   rcc_oscinitstructure.PLL4.PLLM = 2;
+   rcc_oscinitstructure.PLL4.PLLN = 50;
+   rcc_oscinitstructure.PLL4.PLLP = 12;
+   rcc_oscinitstructure.PLL4.PLLQ = 60;
+   rcc_oscinitstructure.PLL4.PLLR = 6;
+   rcc_oscinitstructure.PLL4.PLLRGE = RCC_PLL4IFRANGE_1;
+   rcc_oscinitstructure.PLL4.PLLFRACV = 0;
+   rcc_oscinitstructure.PLL4.PLLMODE = RCC_PLL_INTEGER;
 
    /* Enable access to RTC and backup registers */
    SET_BIT(PWR->CR1, PWR_CR1_DBP);
@@ -322,6 +322,7 @@ void gpio_init(void)
    __HAL_RCC_GPIOF_CLK_ENABLE();
    __HAL_RCC_GPIOG_CLK_ENABLE();
    __HAL_RCC_GPIOH_CLK_ENABLE();
+   __HAL_RCC_GPIOI_CLK_ENABLE();
 
    /* Mark all GPIO pins as non-secure */
    GPIOA->SECCFGR = 0x00000000;
@@ -332,6 +333,7 @@ void gpio_init(void)
    GPIOF->SECCFGR = 0x00000000;
    GPIOG->SECCFGR = 0x00000000;
    GPIOH->SECCFGR = 0x00000000;
+   GPIOI->SECCFGR = 0x00000000;
 }
 
 void uart4_init(void)
