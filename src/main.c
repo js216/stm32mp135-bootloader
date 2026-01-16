@@ -9,8 +9,8 @@
 
 #include "cmd.h"
 #include "ddr.h"
-#include "sd.h"
 #include "lcd.h"
+#include "sd.h"
 #include "setup.h"
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx_hal.h"
@@ -49,3 +49,5 @@ int main(void)
       blink();
    }
 }
+
+// end file main.c

@@ -49,6 +49,7 @@
 #include "irq.h"
 #include "irq_ctrl.h"
 #include "math.h"
+#include "mmu_stm32mp13xx.h"
 #include "stm32mp13xx.h"
 #include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_conf.h"

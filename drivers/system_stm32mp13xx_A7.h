@@ -83,13 +83,6 @@ extern void SecurePhysicalTimer_IRQHandler(void);
 extern void SystemCoreClockUpdate(void);
 
 /**
-  \brief  Create Translation Table.
-
-   Creates Memory Management Unit Translation Table.
- */
-extern void MMU_CreateTranslationTable(void);
-
-/**
  * @}
  */
 

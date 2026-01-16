@@ -24,7 +24,7 @@
 #define CTP_RST_PORT    GPIOH
 #define CTP_RST_PIN     GPIO_PIN_2
 #define CTP_INT_IRQn    EXTI5_IRQn
-#define CTP_INT_PIN_NUM 5
+#define CTP_INT_PIN_NUM 5U
 #define ctp_irqhandler  EXTI5_IRQHandler
 #define ctp_unused      EXTI12_IRQHandler
 
@@ -107,7 +107,7 @@
 #define CTP_RST_PORT    GPIOB
 #define CTP_RST_PIN     GPIO_PIN_7
 #define CTP_INT_IRQn    EXTI12_IRQn
-#define CTP_INT_PIN_NUM 12
+#define CTP_INT_PIN_NUM 12U
 #define ctp_irqhandler  EXTI12_IRQHandler
 #define ctp_unused      EXTI5_IRQHandler
 
@@ -179,3 +179,5 @@
 #endif
 
 #endif // BOARD_H
+
+// end file board.h

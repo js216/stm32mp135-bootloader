@@ -107,6 +107,7 @@
 // Domain 0 is always the Client domain
 // Descriptors should place all memory in domain 0
 
+#include "mmu_stm32mp13xx.h"
 #include "stm32mp13xx.h"
 #include "stm32mp13xx_hal_conf.h"
 #include <stdint.h>

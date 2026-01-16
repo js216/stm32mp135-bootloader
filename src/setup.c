@@ -8,11 +8,12 @@
  */
 
 #include "setup.h"
-#include "cmd.h"
 #include "board.h"
+#include "cmd.h"
 #include "debug.h"
 #include "irq.h"
 #include "irq_ctrl.h"
+#include "mmu_stm32mp13xx.h"
 #include "printf.h"
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx.h"
@@ -52,10 +53,11 @@ void UART4_IRQHandler(void)
    }
 
    // clear other interrupt flags
-   uint32_t error_mask = (USART_ISR_ORE | USART_ISR_NE | USART_ISR_FE | USART_ISR_PE);
+   uint32_t error_mask =
+       (USART_ISR_ORE | USART_ISR_NE | USART_ISR_FE | USART_ISR_PE);
    if (isr & error_mask) {
-      huart4.Instance->ICR = (USART_ICR_ORECF | USART_ICR_NECF | 
-            USART_ICR_FECF | USART_ICR_PECF);
+      huart4.Instance->ICR =
+          (USART_ICR_ORECF | USART_ICR_NECF | USART_ICR_FECF | USART_ICR_PECF);
    }
 
    // handle IDLE line, if used
@@ -89,8 +91,8 @@ void sysclk_init(void)
 
    /* Enable all available oscillators except LSE */
    rcc_oscinitstructure.OscillatorType =
-      (RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSE |
-       RCC_OSCILLATORTYPE_CSI | RCC_OSCILLATORTYPE_LSI);
+       (RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSE |
+        RCC_OSCILLATORTYPE_CSI | RCC_OSCILLATORTYPE_LSI);
 
    rcc_oscinitstructure.HSIState = RCC_HSI_ON;
    rcc_oscinitstructure.HSEState = RCC_HSE_ON;
@@ -134,16 +136,16 @@ void sysclk_init(void)
    rcc_oscinitstructure.PLL3.PLLFRACV  = 0x1a04;
    rcc_oscinitstructure.PLL3.PLLMODE   = RCC_PLL_FRACTIONAL;
 
-   rcc_oscinitstructure.PLL4.PLLState = RCC_PLL_ON;
+   rcc_oscinitstructure.PLL4.PLLState  = RCC_PLL_ON;
    rcc_oscinitstructure.PLL4.PLLSource = RCC_PLL4SOURCE_HSE;
-   rcc_oscinitstructure.PLL4.PLLM = 2;
-   rcc_oscinitstructure.PLL4.PLLN = 50;
-   rcc_oscinitstructure.PLL4.PLLP = 12;
-   rcc_oscinitstructure.PLL4.PLLQ = 60;
-   rcc_oscinitstructure.PLL4.PLLR = 6;
-   rcc_oscinitstructure.PLL4.PLLRGE = RCC_PLL4IFRANGE_1;
-   rcc_oscinitstructure.PLL4.PLLFRACV = 0;
-   rcc_oscinitstructure.PLL4.PLLMODE = RCC_PLL_INTEGER;
+   rcc_oscinitstructure.PLL4.PLLM      = 2;
+   rcc_oscinitstructure.PLL4.PLLN      = 50;
+   rcc_oscinitstructure.PLL4.PLLP      = 12;
+   rcc_oscinitstructure.PLL4.PLLQ      = 60;
+   rcc_oscinitstructure.PLL4.PLLR      = 6;
+   rcc_oscinitstructure.PLL4.PLLRGE    = RCC_PLL4IFRANGE_1;
+   rcc_oscinitstructure.PLL4.PLLFRACV  = 0;
+   rcc_oscinitstructure.PLL4.PLLMODE   = RCC_PLL_INTEGER;
 
    /* Enable access to RTC and backup registers */
    SET_BIT(PWR->CR1, PWR_CR1_DBP);
@@ -154,9 +156,9 @@ void sysclk_init(void)
 
    /* Select PLLx as MPU, AXI and MCU clock sources */
    rcc_clkinitstructure.ClockType =
-      (RCC_CLOCKTYPE_MPU | RCC_CLOCKTYPE_ACLK | RCC_CLOCKTYPE_HCLK |
-       RCC_CLOCKTYPE_PCLK4 | RCC_CLOCKTYPE_PCLK5 | RCC_CLOCKTYPE_PCLK1 |
-       RCC_CLOCKTYPE_PCLK6 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3);
+       (RCC_CLOCKTYPE_MPU | RCC_CLOCKTYPE_ACLK | RCC_CLOCKTYPE_HCLK |
+        RCC_CLOCKTYPE_PCLK4 | RCC_CLOCKTYPE_PCLK5 | RCC_CLOCKTYPE_PCLK1 |
+        RCC_CLOCKTYPE_PCLK6 | RCC_CLOCKTYPE_PCLK2 | RCC_CLOCKTYPE_PCLK3);
 
    rcc_clkinitstructure.MPUInit.MPU_Clock     = RCC_MPUSOURCE_PLL1;
    rcc_clkinitstructure.MPUInit.MPU_Div       = RCC_MPU_DIV2;
@@ -309,7 +311,7 @@ void etzpc_init(void)
 
    // unsecure peripherals
    LL_ETZPC_Set_All_PeriphProtection(
-         ETZPC, LL_ETZPC_PERIPH_PROTECTION_READ_WRITE_NONSECURE);
+       ETZPC, LL_ETZPC_PERIPH_PROTECTION_READ_WRITE_NONSECURE);
 }
 
 void gpio_init(void)
@@ -377,10 +379,10 @@ void uart4_init(void)
    if (HAL_UART_Init(&huart4) != HAL_OK)
       ERROR("UART4");
    if (HAL_UARTEx_SetTxFifoThreshold(&huart4, UART_TXFIFO_THRESHOLD_1_8) !=
-         HAL_OK)
+       HAL_OK)
       ERROR("FIFO TX Threshold");
    if (HAL_UARTEx_SetRxFifoThreshold(&huart4, UART_RXFIFO_THRESHOLD_1_8) !=
-         HAL_OK)
+       HAL_OK)
       ERROR("FIFO RX Threshold");
    if (HAL_UARTEx_DisableFifoMode(&huart4) != HAL_OK)
       ERROR("Disable FIFO");

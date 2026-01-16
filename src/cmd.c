@@ -13,8 +13,6 @@
 #include "defaults.h"
 #include "diag.h"
 #include "fmc.h"
-#include "setup.h"
-#include "ctp.h"
 #include "lcd.h"
 #include "printf.h"
 #include "sd.h"
@@ -271,9 +269,10 @@ static inline int my_isspace(int c)
 
 static int parse_args_uint32(uint32_t *arg1, uint32_t *arg2, uint32_t *arg3)
 {
-   char *p   = line_buf;
-   char *end = NULL;
-   int count = 0;
+   uint32_t *args[3] = {arg1, arg2, arg3};
+   char *p           = line_buf;
+   char *end         = NULL;
+   int count         = 0;
 
    // skip command
    while (*p && !my_isspace((unsigned char)*p))
@@ -281,30 +280,19 @@ static int parse_args_uint32(uint32_t *arg1, uint32_t *arg2, uint32_t *arg3)
    while (*p && my_isspace((unsigned char)*p))
       p++;
 
-   if (*p) {
-      *arg1 = strtoul(p, &end, 0);
+   for (int i = 0; i < 3; i++) {
+      if (!*p)
+         break;
+
+      *args[i] = strtoul(p, &end, 0);
       if (end == p)
-         return count; // no valid number
+         break;
+
       count++;
       p = end;
 
       while (*p && my_isspace((unsigned char)*p))
          p++;
-      if (*p) {
-         *arg2 = strtoul(p, &end, 0);
-         if (end != p) {
-            count++;
-            p = end;
-
-            while (*p && my_isspace((unsigned char)*p))
-               p++;
-            if (*p) {
-               *arg3 = strtoul(p, &end, 0);
-               if (end != p)
-                  count++;
-            }
-         }
-      }
    }
 
    return count;
@@ -538,3 +526,5 @@ void cmd_load_two(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    sd_read(DEF_DTB_BLK, DEF_DTB_LEN, DEF_DTB_ADDR);
    boot_jump(0, 0, 0, 0);
 }
+
+// end file cmd.c

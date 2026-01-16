@@ -10,22 +10,27 @@
 #include "lcd.h"
 #include "board.h"
 #include "ctp.h"
+#include "irq_ctrl.h"
 #include "printf.h"
-#include <stdint.h>
-#include "stm32mp13xx_hal_gpio.h"
-#include "stm32mp13xx_hal_tim.h"
-#include "stm32mp13xx_hal_rcc.h"
-#include "stm32mp13xx_hal_ltdc.h"
 #include "stm32mp135fxx_ca7.h"
+#include "stm32mp13xx_hal_def.h"
+#include "stm32mp13xx_hal_gpio.h"
+#include "stm32mp13xx_hal_gpio_ex.h"
+#include "stm32mp13xx_hal_ltdc.h"
+#include "stm32mp13xx_hal_rcc.h"
+#include "stm32mp13xx_hal_tim.h"
+#include "stm32mp13xx_hal_tim_ex.h"
+#include <stddef.h>
+#include <stdint.h>
 
-#define  RK043FN48H_WIDTH    ((uint16_t)480)  /* LCD PIXEL WIDTH            */
-#define  RK043FN48H_HEIGHT   ((uint16_t)272)  /* LCD PIXEL HEIGHT           */
-#define  RK043FN48H_HSYNC    ((uint16_t)41)   /* Horizontal synchronization */
-#define  RK043FN48H_HBP      ((uint16_t)13)   /* Horizontal back porch      */
-#define  RK043FN48H_HFP      ((uint16_t)32)   /* Horizontal front porch     */
-#define  RK043FN48H_VSYNC    ((uint16_t)10)   /* Vertical synchronization   */
-#define  RK043FN48H_VBP      ((uint16_t)2)    /* Vertical back porch        */
-#define  RK043FN48H_VFP      ((uint16_t)2)    /* Vertical front porch       */
+#define RK043FN48H_WIDTH  ((uint16_t)480) /* LCD PIXEL WIDTH            */
+#define RK043FN48H_HEIGHT ((uint16_t)272) /* LCD PIXEL HEIGHT           */
+#define RK043FN48H_HSYNC  ((uint16_t)41)  /* Horizontal synchronization */
+#define RK043FN48H_HBP    ((uint16_t)13)  /* Horizontal back porch      */
+#define RK043FN48H_HFP    ((uint16_t)32)  /* Horizontal front porch     */
+#define RK043FN48H_VSYNC  ((uint16_t)10)  /* Vertical synchronization   */
+#define RK043FN48H_VBP    ((uint16_t)2)   /* Vertical back porch        */
+#define RK043FN48H_VFP    ((uint16_t)2)   /* Vertical front porch       */
 
 struct lcd_pin_cfg {
    GPIO_TypeDef *port;
@@ -35,7 +40,7 @@ struct lcd_pin_cfg {
 
 /* global variables */
 static TIM_HandleTypeDef htim1;
-static LTDC_HandleTypeDef hLtdcHandler;
+static LTDC_HandleTypeDef hltdchandler;
 
 static void lcd_backlight_init(void)
 {
@@ -49,7 +54,7 @@ static void lcd_backlight_init(void)
    gpio.Alternate = GPIO_AF1_TIM1;
    HAL_GPIO_Init(LCD_BL_PORT, &gpio);
 
-   htim1.Instance = TIM1;
+   htim1.Instance               = TIM1;
    htim1.Init.Prescaler         = 99U;
    htim1.Init.CounterMode       = TIM_COUNTERMODE_UP;
    htim1.Init.Period            = 999U;
@@ -75,28 +80,27 @@ static void lcd_backlight_init(void)
 static void lcd_panel_pin_setup(void)
 {
    static const struct lcd_pin_cfg pins[] = {
-      { LCD_CLK_PORT,   LCD_CLK_PIN,   LCD_CLK_AF   },
-      { LCD_HSYNC_PORT, LCD_HSYNC_PIN, LCD_HSYNC_AF },
-      { LCD_VSYNC_PORT, LCD_VSYNC_PIN, LCD_VSYNC_AF },
-      { LCD_DE_PORT,    LCD_DE_PIN,    LCD_DE_AF    },
-      { LCD_R3_PORT,    LCD_R3_PIN,    LCD_R3_AF    },
-      { LCD_R4_PORT,    LCD_R4_PIN,    LCD_R4_AF    },
-      { LCD_R5_PORT,    LCD_R5_PIN,    LCD_R5_AF    },
-      { LCD_R6_PORT,    LCD_R6_PIN,    LCD_R6_AF    },
-      { LCD_R7_PORT,    LCD_R7_PIN,    LCD_R7_AF    },
-      { LCD_G2_PORT,    LCD_G2_PIN,    LCD_G2_AF    },
-      { LCD_G3_PORT,    LCD_G3_PIN,    LCD_G3_AF    },
-      { LCD_G4_PORT,    LCD_G4_PIN,    LCD_G4_AF    },
-      { LCD_G5_PORT,    LCD_G5_PIN,    LCD_G5_AF    },
-      { LCD_G6_PORT,    LCD_G6_PIN,    LCD_G6_AF    },
-      { LCD_G7_PORT,    LCD_G7_PIN,    LCD_G7_AF    },
-      { LCD_B3_PORT,    LCD_B3_PIN,    LCD_B3_AF    },
-      { LCD_B4_PORT,    LCD_B4_PIN,    LCD_B4_AF    },
-      { LCD_B5_PORT,    LCD_B5_PIN,    LCD_B5_AF    },
-      { LCD_B6_PORT,    LCD_B6_PIN,    LCD_B6_AF    },
-      { LCD_B7_PORT,    LCD_B7_PIN,    LCD_B7_AF    },
+       {LCD_CLK_PORT,   LCD_CLK_PIN,   LCD_CLK_AF  },
+       {LCD_HSYNC_PORT, LCD_HSYNC_PIN, LCD_HSYNC_AF},
+       {LCD_VSYNC_PORT, LCD_VSYNC_PIN, LCD_VSYNC_AF},
+       {LCD_DE_PORT,    LCD_DE_PIN,    LCD_DE_AF   },
+       {LCD_R3_PORT,    LCD_R3_PIN,    LCD_R3_AF   },
+       {LCD_R4_PORT,    LCD_R4_PIN,    LCD_R4_AF   },
+       {LCD_R5_PORT,    LCD_R5_PIN,    LCD_R5_AF   },
+       {LCD_R6_PORT,    LCD_R6_PIN,    LCD_R6_AF   },
+       {LCD_R7_PORT,    LCD_R7_PIN,    LCD_R7_AF   },
+       {LCD_G2_PORT,    LCD_G2_PIN,    LCD_G2_AF   },
+       {LCD_G3_PORT,    LCD_G3_PIN,    LCD_G3_AF   },
+       {LCD_G4_PORT,    LCD_G4_PIN,    LCD_G4_AF   },
+       {LCD_G5_PORT,    LCD_G5_PIN,    LCD_G5_AF   },
+       {LCD_G6_PORT,    LCD_G6_PIN,    LCD_G6_AF   },
+       {LCD_G7_PORT,    LCD_G7_PIN,    LCD_G7_AF   },
+       {LCD_B3_PORT,    LCD_B3_PIN,    LCD_B3_AF   },
+       {LCD_B4_PORT,    LCD_B4_PIN,    LCD_B4_AF   },
+       {LCD_B5_PORT,    LCD_B5_PIN,    LCD_B5_AF   },
+       {LCD_B6_PORT,    LCD_B6_PIN,    LCD_B6_AF   },
+       {LCD_B7_PORT,    LCD_B7_PIN,    LCD_B7_AF   },
    };
-
 
    GPIO_InitTypeDef gpio;
    gpio.Mode  = GPIO_MODE_AF_PP;
@@ -113,30 +117,36 @@ static void lcd_panel_pin_setup(void)
 static void lcd_panel_init(void)
 {
    /* Timing Configuration */
-   hLtdcHandler.Init.HorizontalSync = (RK043FN48H_HSYNC - (uint16_t)1);
-   hLtdcHandler.Init.VerticalSync = (RK043FN48H_VSYNC - (uint16_t)1);
-   hLtdcHandler.Init.AccumulatedHBP = (RK043FN48H_HSYNC + RK043FN48H_HBP - (uint16_t)1);
-   hLtdcHandler.Init.AccumulatedVBP = (RK043FN48H_VSYNC + RK043FN48H_VBP - (uint16_t)1);
-   hLtdcHandler.Init.AccumulatedActiveH = (RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP - (uint16_t)1);
-   hLtdcHandler.Init.AccumulatedActiveW = (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP - (uint16_t)1);
-   hLtdcHandler.Init.TotalHeigh = (RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP +
-	 RK043FN48H_VFP - (uint16_t)1);
-   hLtdcHandler.Init.TotalWidth = (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP +
-	 RK043FN48H_HFP - (uint16_t)1);
+   hltdchandler.Init.HorizontalSync = (RK043FN48H_HSYNC - (uint16_t)1);
+   hltdchandler.Init.VerticalSync   = (RK043FN48H_VSYNC - (uint16_t)1);
+   hltdchandler.Init.AccumulatedHBP =
+       (RK043FN48H_HSYNC + RK043FN48H_HBP - (uint16_t)1);
+   hltdchandler.Init.AccumulatedVBP =
+       (RK043FN48H_VSYNC + RK043FN48H_VBP - (uint16_t)1);
+   hltdchandler.Init.AccumulatedActiveH =
+       (RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP - (uint16_t)1);
+   hltdchandler.Init.AccumulatedActiveW =
+       (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP - (uint16_t)1);
+   hltdchandler.Init.TotalHeigh =
+       (RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP + RK043FN48H_VFP -
+        (uint16_t)1);
+   hltdchandler.Init.TotalWidth =
+       (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP + RK043FN48H_HFP -
+        (uint16_t)1);
 
    /* Background value */
-   hLtdcHandler.Init.Backcolor.Blue = 0;
-   hLtdcHandler.Init.Backcolor.Green = 0;
-   hLtdcHandler.Init.Backcolor.Red = 0;
+   hltdchandler.Init.Backcolor.Blue  = 0;
+   hltdchandler.Init.Backcolor.Green = 0;
+   hltdchandler.Init.Backcolor.Red   = 0;
 
    /* Polarity */
-   hLtdcHandler.Init.HSPolarity = LTDC_HSPOLARITY_AL;
-   hLtdcHandler.Init.VSPolarity = LTDC_VSPOLARITY_AL;
-   hLtdcHandler.Init.DEPolarity = LTDC_DEPOLARITY_AL;
-   hLtdcHandler.Init.PCPolarity = LTDC_PCPOLARITY_IPC;
-   hLtdcHandler.Instance = LTDC;
+   hltdchandler.Init.HSPolarity = LTDC_HSPOLARITY_AL;
+   hltdchandler.Init.VSPolarity = LTDC_VSPOLARITY_AL;
+   hltdchandler.Init.DEPolarity = LTDC_DEPOLARITY_AL;
+   hltdchandler.Init.PCPolarity = LTDC_PCPOLARITY_IPC;
+   hltdchandler.Instance        = LTDC;
 
-   if (HAL_LTDC_GetState(&hLtdcHandler) == HAL_LTDC_STATE_RESET) {
+   if (HAL_LTDC_GetState(&hltdchandler) == HAL_LTDC_STATE_RESET) {
       IRQ_SetPriority(LTDC_IRQn, 0);
       IRQ_Enable(LTDC_IRQn);
 
@@ -147,32 +157,32 @@ static void lcd_panel_init(void)
       __HAL_RCC_LTDC_RELEASE_RESET();
    }
 
-   if (HAL_LTDC_Init(&hLtdcHandler) != HAL_OK) {
+   if (HAL_LTDC_Init(&hltdchandler) != HAL_OK) {
       my_printf("HAL_LTDC_Init() != HAL_OK\r\n");
       return;
    }
 
    // image layer
    LTDC_LayerCfgTypeDef layer_cfg;
-   layer_cfg.WindowX0 = 0;
-   layer_cfg.WindowX1 = RK043FN48H_WIDTH;
-   layer_cfg.WindowY0 = 0;
-   layer_cfg.WindowY1 = RK043FN48H_HEIGHT;
-   layer_cfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB888;
-   layer_cfg.FBStartAdress = DRAM_MEM_BASE;
-   layer_cfg.Alpha = 255;
-   layer_cfg.Alpha0 = 0;
-   layer_cfg.Backcolor.Blue = 0;
+   layer_cfg.WindowX0        = 0;
+   layer_cfg.WindowX1        = RK043FN48H_WIDTH;
+   layer_cfg.WindowY0        = 0;
+   layer_cfg.WindowY1        = RK043FN48H_HEIGHT;
+   layer_cfg.PixelFormat     = LTDC_PIXEL_FORMAT_RGB888;
+   layer_cfg.FBStartAdress   = DRAM_MEM_BASE;
+   layer_cfg.Alpha           = 255;
+   layer_cfg.Alpha0          = 0;
+   layer_cfg.Backcolor.Blue  = 0;
    layer_cfg.Backcolor.Green = 0;
-   layer_cfg.Backcolor.Red = 0;
+   layer_cfg.Backcolor.Red   = 0;
    layer_cfg.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA;
    layer_cfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA;
-   layer_cfg.ImageWidth = RK043FN48H_WIDTH;
-   layer_cfg.ImageHeight = RK043FN48H_HEIGHT;
-   layer_cfg.HorMirrorEn = 0;
-   layer_cfg.VertMirrorEn = 0;
-   HAL_LTDC_ConfigLayer(&hLtdcHandler, &layer_cfg, LTDC_LAYER_1);
-   __HAL_LTDC_DISABLE_IT(&hLtdcHandler, LTDC_IT_FU); // no FIFO underrun IRQ
+   layer_cfg.ImageWidth      = RK043FN48H_WIDTH;
+   layer_cfg.ImageHeight     = RK043FN48H_HEIGHT;
+   layer_cfg.HorMirrorEn     = 0;
+   layer_cfg.VertMirrorEn    = 0;
+   HAL_LTDC_ConfigLayer(&hltdchandler, &layer_cfg, LTDC_LAYER_1);
+   __HAL_LTDC_DISABLE_IT(&hltdchandler, LTDC_IT_FU); // no FIFO underrun IRQ
 
    // LCD_DISP pin
    GPIO_InitTypeDef gpio;
@@ -198,8 +208,7 @@ void lcd_backlight(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    if (argc > 0) {
       if (arg1 <= 100U) {
-	 __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 
-	       (htim1.Init.Period + 1U) * arg1 / 100U);
+         htim1.Instance->CCR3 = (htim1.Init.Period + 1U) * arg1 / 100U;
       }
    }
 }
@@ -211,14 +220,13 @@ void lcd_color(int argc, uint32_t r, uint32_t g, uint32_t b)
 
    for (uint32_t y = 0; y < RK043FN48H_HEIGHT; y++) {
       for (uint32_t x = 0; x < RK043FN48H_WIDTH; x++) {
-	 uint32_t p = (y * RK043FN48H_WIDTH + x) * 3U;
-	 lcd_fb[p + 0] = b; // blue
-	 lcd_fb[p + 1] = g; // green
-	 lcd_fb[p + 2] = r; // red
+         uint32_t p    = (y * RK043FN48H_WIDTH + x) * 3U;
+         lcd_fb[p + 0] = b; // blue
+         lcd_fb[p + 1] = g; // green
+         lcd_fb[p + 2] = r; // red
       }
    }
 
    /* make sure CPU writes reach DDR before LTDC reads */
    L1C_CleanDCacheAll();
-   __DSB();
 }
