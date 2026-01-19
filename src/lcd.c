@@ -113,10 +113,14 @@ static void lcd_panel_init(void)
    hltdchandler.Init.VerticalSync   = (LCD_VSYNC - (uint16_t)1);
    hltdchandler.Init.AccumulatedHBP = (LCD_HSYNC + LCD_HBP - (uint16_t)1);
    hltdchandler.Init.AccumulatedVBP = (LCD_VSYNC + LCD_VBP - (uint16_t)1);
-   hltdchandler.Init.AccumulatedActiveH = (LCD_HEIGHT + LCD_VSYNC + LCD_VBP - (uint16_t)1);
-   hltdchandler.Init.AccumulatedActiveW = (LCD_WIDTH + LCD_HSYNC + LCD_HBP - (uint16_t)1);
-   hltdchandler.Init.TotalHeigh = (LCD_HEIGHT + LCD_VSYNC + LCD_VBP + LCD_VFP - (uint16_t)1);
-   hltdchandler.Init.TotalWidth = (LCD_WIDTH + LCD_HSYNC + LCD_HBP + LCD_HFP - (uint16_t)1);
+   hltdchandler.Init.AccumulatedActiveH =
+       (LCD_HEIGHT + LCD_VSYNC + LCD_VBP - (uint16_t)1);
+   hltdchandler.Init.AccumulatedActiveW =
+       (LCD_WIDTH + LCD_HSYNC + LCD_HBP - (uint16_t)1);
+   hltdchandler.Init.TotalHeigh =
+       (LCD_HEIGHT + LCD_VSYNC + LCD_VBP + LCD_VFP - (uint16_t)1);
+   hltdchandler.Init.TotalWidth =
+       (LCD_WIDTH + LCD_HSYNC + LCD_HBP + LCD_HFP - (uint16_t)1);
 
    /* Background value */
    hltdchandler.Init.Backcolor.Blue  = 0;

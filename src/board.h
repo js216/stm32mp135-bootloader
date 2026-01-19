@@ -120,14 +120,14 @@
 #define ctp_irqhandler  EXTI12_IRQHandler
 #define ctp_unused      EXTI5_IRQHandler
 
-#define LCD_WIDTH   800U
-#define LCD_HEIGHT  480U
-#define LCD_HSYNC   1U
-#define LCD_HBP     8U
-#define LCD_HFP     8U
-#define LCD_VSYNC   1U
-#define LCD_VBP     16U
-#define LCD_VFP     16U
+#define LCD_WIDTH  800U
+#define LCD_HEIGHT 480U
+#define LCD_HSYNC  1U
+#define LCD_HBP    8U
+#define LCD_HFP    8U
+#define LCD_VSYNC  1U
+#define LCD_VBP    16U
+#define LCD_VFP    16U
 
 #define LCD_BL_PORT    GPIOB
 #define LCD_BL_PIN     GPIO_PIN_15

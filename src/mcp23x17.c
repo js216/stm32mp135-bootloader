@@ -9,17 +9,20 @@
 
 #include "mcp23x17.h"
 #include "printf.h"
+#include "stm32mp135fxx_ca7.h"
+#include "stm32mp13xx_hal_def.h"
+#include "stm32mp13xx_hal_gpio.h"
+#include "stm32mp13xx_hal_gpio_ex.h"
 #include "stm32mp13xx_hal_i2c.h"
 #include "stm32mp13xx_hal_rcc.h"
-#include "stm32mp13xx_hal_gpio.h"
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#define MCP_I2C_ADDR 0x21
-#define REG_IODIRA 0x00
-#define REG_IODIRB 0x01
-#define REG_GPIOA  0x12
-#define REG_GPIOB  0x13
+#define MCP_I2C_ADDR 0x21U
+#define REG_IODIRA   0x00U
+#define REG_IODIRB   0x01U
+#define REG_GPIOA    0x12U
+#define REG_GPIOB    0x13U
 
 // global variables
 static I2C_HandleTypeDef hi2c;
@@ -33,7 +36,7 @@ void mcp_init(void)
    gpio_initstruct.Speed     = GPIO_SPEED_FREQ_LOW;
    gpio_initstruct.Alternate = GPIO_AF5_I2C1;
 
-   gpio_initstruct.Pin       = GPIO_PIN_12;
+   gpio_initstruct.Pin = GPIO_PIN_12;
    HAL_GPIO_Init(GPIOD, &gpio_initstruct);
 
    gpio_initstruct.Pin = GPIO_PIN_8;
@@ -72,15 +75,14 @@ void mcp_init(void)
       my_printf("CTP init failed: HAL_I2C_Init() failed\r\n");
       return;
    }
-
 }
 
 void mcp_set_pin_mode(enum mcp_pin pin, bool is_output)
 {
-   uint8_t reg;
-   uint8_t bit;
-   uint8_t val = 0;
-   HAL_StatusTypeDef ret;
+   uint8_t reg           = 0;
+   uint8_t bit           = 0;
+   uint8_t val           = 0;
+   HAL_StatusTypeDef ret = 0;
 
    if (pin < 8)
       reg = REG_IODIRA;
@@ -89,18 +91,20 @@ void mcp_set_pin_mode(enum mcp_pin pin, bool is_output)
 
    bit = (uint8_t)pin % 8;
 
-   ret = HAL_I2C_Mem_Read(&hi2c, MCP_I2C_ADDR << 1, reg, I2C_MEMADD_SIZE_8BIT, &val, 1, 100);
+   ret = HAL_I2C_Mem_Read(&hi2c, MCP_I2C_ADDR << 1U, reg, I2C_MEMADD_SIZE_8BIT,
+                          &val, 1, 100);
    if (ret != HAL_OK) {
       my_printf("HAL_I2C_Mem_Read() != HAL_OK\r\n");
       return;
    }
 
    if (is_output)
-      val &= ~(1 << bit);
+      val &= ~(1U << bit);
    else
-      val |= (1 << bit);
+      val |= (1U << bit);
 
-   ret = HAL_I2C_Mem_Write(&hi2c, MCP_I2C_ADDR << 1, reg, I2C_MEMADD_SIZE_8BIT, &val, 1, 100);
+   ret = HAL_I2C_Mem_Write(&hi2c, MCP_I2C_ADDR << 1U, reg, I2C_MEMADD_SIZE_8BIT,
+                           &val, 1, 100);
    if (ret != HAL_OK) {
       my_printf("HAL_I2C_Mem_Write() != HAL_OK\r\n");
       return;
@@ -109,10 +113,10 @@ void mcp_set_pin_mode(enum mcp_pin pin, bool is_output)
 
 void mcp_pin_write(enum mcp_pin pin, bool is_high)
 {
-   uint8_t reg;
-   uint8_t bit;
-   uint8_t val = 0;
-   HAL_StatusTypeDef ret;
+   uint8_t reg           = 0;
+   uint8_t bit           = 0;
+   uint8_t val           = 0;
+   HAL_StatusTypeDef ret = 0;
 
    if (pin < 8)
       reg = REG_GPIOA;
@@ -121,18 +125,20 @@ void mcp_pin_write(enum mcp_pin pin, bool is_high)
 
    bit = (uint8_t)pin % 8;
 
-   ret = HAL_I2C_Mem_Read(&hi2c, MCP_I2C_ADDR << 1, reg, I2C_MEMADD_SIZE_8BIT, &val, 1, 100);
+   ret = HAL_I2C_Mem_Read(&hi2c, MCP_I2C_ADDR << 1U, reg, I2C_MEMADD_SIZE_8BIT,
+                          &val, 1, 100);
    if (ret != HAL_OK) {
       my_printf("HAL_I2C_Mem_Read() != HAL_OK\r\n");
       return;
    }
 
    if (is_high)
-      val |= (1 << bit);
+      val |= (1U << bit);
    else
-      val &= ~(1 << bit);
+      val &= ~(1U << bit);
 
-   ret = HAL_I2C_Mem_Write(&hi2c, MCP_I2C_ADDR << 1, reg, I2C_MEMADD_SIZE_8BIT, &val, 1, 100);
+   ret = HAL_I2C_Mem_Write(&hi2c, MCP_I2C_ADDR << 1U, reg, I2C_MEMADD_SIZE_8BIT,
+                           &val, 1, 100);
    if (ret != HAL_OK) {
       my_printf("HAL_I2C_Mem_Read() != HAL_OK\r\n");
       return;

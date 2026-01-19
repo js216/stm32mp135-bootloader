@@ -70,7 +70,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"ddr", DEF_PRINT_LEN, 0, DEF_LINUX_ADDR},
-            },                                    .num_defaults = 1,
+            },                                     .num_defaults = 1,
      .handler      = ddr_print_cmd,
      },
 
@@ -81,7 +81,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"image", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
-            }, .num_defaults = 1,
+            },  .num_defaults = 1,
      .handler      = load_sd_cmd,
      },
 
@@ -92,7 +92,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"target", 0, 0, DEF_LINUX_ADDR},
-            },                       .num_defaults = 1,
+            },                        .num_defaults = 1,
      .handler      = boot_jump,
      },
 
@@ -112,7 +112,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"exe", DEF_EXE_LEN, DEF_EXE_BLK, DEF_EXE_ADDR},
-            },                                    .num_defaults = 1,
+            },                                     .num_defaults = 1,
      .handler      = cmd_load_one,
      },
 
@@ -124,7 +124,7 @@ static const struct cmd cmd_list[] = {
             (const struct cmd_defaults[]){
                 {"linux", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
                 {"dtb", DEF_DTB_LEN, DEF_DTB_BLK, DEF_DTB_ADDR},
-            },                                    .num_defaults = 2,
+            },       .num_defaults = 2,
      .handler      = cmd_load_two,
      },
 

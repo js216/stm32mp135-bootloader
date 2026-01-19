@@ -10,14 +10,26 @@
 #ifndef MCP23X17_H
 #define MCP23X17_H
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 enum mcp_pin {
-   MCP_PIN_0 = 0, MCP_PIN_1, MCP_PIN_2,  MCP_PIN_3,
-   MCP_PIN_4,     MCP_PIN_5, MCP_PIN_6,  MCP_PIN_7,
-   MCP_PIN_8,     MCP_PIN_9, MCP_PIN_10, MCP_PIN_11,
-   MCP_PIN_12,    MCP_PIN_13,MCP_PIN_14, MCP_PIN_15,
+   MCP_PIN_0 = 0,
+   MCP_PIN_1,
+   MCP_PIN_2,
+   MCP_PIN_3,
+   MCP_PIN_4,
+   MCP_PIN_5,
+   MCP_PIN_6,
+   MCP_PIN_7,
+   MCP_PIN_8,
+   MCP_PIN_9,
+   MCP_PIN_10,
+   MCP_PIN_11,
+   MCP_PIN_12,
+   MCP_PIN_13,
+   MCP_PIN_14,
+   MCP_PIN_15,
 };
 
 /**
