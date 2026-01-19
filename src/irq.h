@@ -20,6 +20,7 @@ enum {
    PRIO_UART   = 7,
    PRIO_TICK   = 10,
    PRIO_GPIO   = 15,
+   PRIO_LTDC   = 16,
 };
 
 void reset_handler(void) __attribute__((naked, target("arm")));

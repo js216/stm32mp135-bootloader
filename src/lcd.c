@@ -10,6 +10,7 @@
 #include "lcd.h"
 #include "board.h"
 #include "ctp.h"
+#include "irq.h"
 #include "irq_ctrl.h"
 #include "printf.h"
 #include "stm32mp135fxx_ca7.h"
@@ -22,15 +23,6 @@
 #include "stm32mp13xx_hal_tim_ex.h"
 #include <stddef.h>
 #include <stdint.h>
-
-#define RK043FN48H_WIDTH  ((uint16_t)480) /* LCD PIXEL WIDTH            */
-#define RK043FN48H_HEIGHT ((uint16_t)272) /* LCD PIXEL HEIGHT           */
-#define RK043FN48H_HSYNC  ((uint16_t)41)  /* Horizontal synchronization */
-#define RK043FN48H_HBP    ((uint16_t)13)  /* Horizontal back porch      */
-#define RK043FN48H_HFP    ((uint16_t)32)  /* Horizontal front porch     */
-#define RK043FN48H_VSYNC  ((uint16_t)10)  /* Vertical synchronization   */
-#define RK043FN48H_VBP    ((uint16_t)2)   /* Vertical back porch        */
-#define RK043FN48H_VFP    ((uint16_t)2)   /* Vertical front porch       */
 
 struct lcd_pin_cfg {
    GPIO_TypeDef *port;
@@ -117,22 +109,14 @@ static void lcd_panel_pin_setup(void)
 static void lcd_panel_init(void)
 {
    /* Timing Configuration */
-   hltdchandler.Init.HorizontalSync = (RK043FN48H_HSYNC - (uint16_t)1);
-   hltdchandler.Init.VerticalSync   = (RK043FN48H_VSYNC - (uint16_t)1);
-   hltdchandler.Init.AccumulatedHBP =
-       (RK043FN48H_HSYNC + RK043FN48H_HBP - (uint16_t)1);
-   hltdchandler.Init.AccumulatedVBP =
-       (RK043FN48H_VSYNC + RK043FN48H_VBP - (uint16_t)1);
-   hltdchandler.Init.AccumulatedActiveH =
-       (RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP - (uint16_t)1);
-   hltdchandler.Init.AccumulatedActiveW =
-       (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP - (uint16_t)1);
-   hltdchandler.Init.TotalHeigh =
-       (RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP + RK043FN48H_VFP -
-        (uint16_t)1);
-   hltdchandler.Init.TotalWidth =
-       (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP + RK043FN48H_HFP -
-        (uint16_t)1);
+   hltdchandler.Init.HorizontalSync = (LCD_HSYNC - (uint16_t)1);
+   hltdchandler.Init.VerticalSync   = (LCD_VSYNC - (uint16_t)1);
+   hltdchandler.Init.AccumulatedHBP = (LCD_HSYNC + LCD_HBP - (uint16_t)1);
+   hltdchandler.Init.AccumulatedVBP = (LCD_VSYNC + LCD_VBP - (uint16_t)1);
+   hltdchandler.Init.AccumulatedActiveH = (LCD_HEIGHT + LCD_VSYNC + LCD_VBP - (uint16_t)1);
+   hltdchandler.Init.AccumulatedActiveW = (LCD_WIDTH + LCD_HSYNC + LCD_HBP - (uint16_t)1);
+   hltdchandler.Init.TotalHeigh = (LCD_HEIGHT + LCD_VSYNC + LCD_VBP + LCD_VFP - (uint16_t)1);
+   hltdchandler.Init.TotalWidth = (LCD_WIDTH + LCD_HSYNC + LCD_HBP + LCD_HFP - (uint16_t)1);
 
    /* Background value */
    hltdchandler.Init.Backcolor.Blue  = 0;
@@ -147,7 +131,7 @@ static void lcd_panel_init(void)
    hltdchandler.Instance        = LTDC;
 
    if (HAL_LTDC_GetState(&hltdchandler) == HAL_LTDC_STATE_RESET) {
-      IRQ_SetPriority(LTDC_IRQn, 0);
+      IRQ_SetPriority(LTDC_IRQn, PRIO_LTDC);
       IRQ_Enable(LTDC_IRQn);
 
       lcd_panel_pin_setup();
@@ -165,9 +149,9 @@ static void lcd_panel_init(void)
    // image layer
    LTDC_LayerCfgTypeDef layer_cfg;
    layer_cfg.WindowX0        = 0;
-   layer_cfg.WindowX1        = RK043FN48H_WIDTH;
+   layer_cfg.WindowX1        = LCD_WIDTH;
    layer_cfg.WindowY0        = 0;
-   layer_cfg.WindowY1        = RK043FN48H_HEIGHT;
+   layer_cfg.WindowY1        = LCD_HEIGHT;
    layer_cfg.PixelFormat     = LTDC_PIXEL_FORMAT_RGB888;
    layer_cfg.FBStartAdress   = DRAM_MEM_BASE;
    layer_cfg.Alpha           = 255;
@@ -177,8 +161,8 @@ static void lcd_panel_init(void)
    layer_cfg.Backcolor.Red   = 0;
    layer_cfg.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA;
    layer_cfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA;
-   layer_cfg.ImageWidth      = RK043FN48H_WIDTH;
-   layer_cfg.ImageHeight     = RK043FN48H_HEIGHT;
+   layer_cfg.ImageWidth      = LCD_WIDTH;
+   layer_cfg.ImageHeight     = LCD_HEIGHT;
    layer_cfg.HorMirrorEn     = 0;
    layer_cfg.VertMirrorEn    = 0;
    HAL_LTDC_ConfigLayer(&hltdchandler, &layer_cfg, LTDC_LAYER_1);
@@ -218,9 +202,9 @@ void lcd_color(int argc, uint32_t r, uint32_t g, uint32_t b)
    (void)argc;
    volatile uint8_t *lcd_fb = (volatile uint8_t *)DRAM_MEM_BASE;
 
-   for (uint32_t y = 0; y < RK043FN48H_HEIGHT; y++) {
-      for (uint32_t x = 0; x < RK043FN48H_WIDTH; x++) {
-         uint32_t p    = (y * RK043FN48H_WIDTH + x) * 3U;
+   for (uint32_t y = 0; y < LCD_HEIGHT; y++) {
+      for (uint32_t x = 0; x < LCD_WIDTH; x++) {
+         uint32_t p    = (y * LCD_WIDTH + x) * 3U;
          lcd_fb[p + 0] = b; // blue
          lcd_fb[p + 1] = g; // green
          lcd_fb[p + 2] = r; // red

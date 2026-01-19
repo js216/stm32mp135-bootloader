@@ -28,6 +28,15 @@
 #define ctp_irqhandler  EXTI5_IRQHandler
 #define ctp_unused      EXTI12_IRQHandler
 
+#define LCD_WIDTH  480U // LCD PIXEL WIDTH
+#define LCD_HEIGHT 272U // LCD PIXEL HEIGHT
+#define LCD_HSYNC  41U  // Horizontal synchronization
+#define LCD_HBP    13U  // Horizontal back porch
+#define LCD_HFP    32U  // Horizontal front porch
+#define LCD_VSYNC  10U  // Vertical synchronization
+#define LCD_VBP    2U   // Vertical back porch
+#define LCD_VFP    2U   // Vertical front porch
+
 #define LCD_BL_PORT    GPIOE
 #define LCD_BL_PIN     GPIO_PIN_12
 #define LCD_DISP_PORT  GPIOI
@@ -110,6 +119,15 @@
 #define CTP_INT_PIN_NUM 12U
 #define ctp_irqhandler  EXTI12_IRQHandler
 #define ctp_unused      EXTI5_IRQHandler
+
+#define LCD_WIDTH   800U
+#define LCD_HEIGHT  480U
+#define LCD_HSYNC   1U
+#define LCD_HBP     8U
+#define LCD_HFP     8U
+#define LCD_VSYNC   1U
+#define LCD_VBP     16U
+#define LCD_VFP     16U
 
 #define LCD_BL_PORT    GPIOB
 #define LCD_BL_PIN     GPIO_PIN_15

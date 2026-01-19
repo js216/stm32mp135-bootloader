@@ -141,7 +141,7 @@ void sysclk_init(void)
    rcc_oscinitstructure.PLL4.PLLM      = 2;
    rcc_oscinitstructure.PLL4.PLLN      = 50;
    rcc_oscinitstructure.PLL4.PLLP      = 12;
-   rcc_oscinitstructure.PLL4.PLLQ      = 60;
+   rcc_oscinitstructure.PLL4.PLLQ      = 25;
    rcc_oscinitstructure.PLL4.PLLR      = 6;
    rcc_oscinitstructure.PLL4.PLLRGE    = RCC_PLL4IFRANGE_1;
    rcc_oscinitstructure.PLL4.PLLFRACV  = 0;
