@@ -12,6 +12,7 @@
 #include "ddr.h"
 #include "defaults.h"
 #include "diag.h"
+#include "eth.h"
 #include "fmc.h"
 #include "lcd.h"
 #include "printf.h"
@@ -161,6 +162,15 @@ static const struct cmd cmd_list[] = {
      .defaults     = NULL,
      .num_defaults = 0,
      .handler      = lcd_color,
+     },
+
+    {
+     .name         = "eth_init",
+     .syntax       = "",
+     .summary      = "Initialize Ethernet interface",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = eth_init,
      },
 };
 

@@ -214,3 +214,5 @@ void lcd_color(int argc, uint32_t r, uint32_t g, uint32_t b)
    /* make sure CPU writes reach DDR before LTDC reads */
    L1C_CleanDCacheAll();
 }
+
+// end file lcd.c

@@ -169,7 +169,6 @@ void ctp_init(void)
 
    ctp_pin_setup();
 
-   // enable I2C5 clock
    __HAL_RCC_I2C5_CLK_ENABLE();
 
    /* To get 100kHz (10,000ns period):
