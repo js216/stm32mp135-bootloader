@@ -16,6 +16,7 @@
 enum {
    PRIO_STPMIC = 0,
    PRIO_SD     = 1,
+   PRIO_ETH    = 4,
    PRIO_USB    = 5,
    PRIO_UART   = 7,
    PRIO_TICK   = 10,
@@ -41,5 +42,6 @@ void EXTI8_IRQHandler(void);
 void UART4_IRQHandler(void);
 void EXTI12_IRQHandler(void);
 void EXTI5_IRQHandler(void);
+void ETH1_IRQHandler(void);
 
 #endif // IRQ_H

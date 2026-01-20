@@ -13,6 +13,7 @@
 #ifdef EVB // STM32MP135F-DK: Discovery kit with STM32MP135F MPU
 
 #define USE_STPMIC1x 1
+#define USE_MCP23x17 1
 
 #define CTP_INT_PORT    GPIOF
 #define CTP_INT_PIN     GPIO_PIN_5
@@ -105,6 +106,7 @@
 #else
 
 #define USE_STPMIC1x 0
+#define USE_MCP23x17 0
 
 #define CTP_INT_PORT    GPIOH
 #define CTP_INT_PIN     GPIO_PIN_12
