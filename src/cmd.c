@@ -165,12 +165,12 @@ static const struct cmd cmd_list[] = {
      },
 
     {
-     .name         = "eth_phy_status",
+     .name         = "eth_status",
      .syntax       = "",
-     .summary      = "Check Eth1 PHY status",
+     .summary      = "Check Ethernet status",
      .defaults     = NULL,
      .num_defaults = 0,
-     .handler      = eth_phy_status,
+     .handler      = eth_status,
      },
 
     {

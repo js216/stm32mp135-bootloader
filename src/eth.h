@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 void eth_init(void);
-void eth_phy_status(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+void eth_status(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void eth_send_test_frame(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 
 #endif // ETH_H

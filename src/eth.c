@@ -47,8 +47,6 @@
 #define LAN8742_PHYID1_EXPECT     ((uint16_t)0x0007U)
 #define LAN8742_PHYID2_EXPECT     ((uint16_t)0xC131U)
 
-static void eth_rx_process(void);
-
 // global variables
 static ETH_HandleTypeDef eth_handle;
 static ETH_TxPacketConfigTypeDef tx_conf;
@@ -56,20 +54,8 @@ static ETH_TxPacketConfigTypeDef tx_conf;
 // descriptors
 __attribute__((aligned(32))) static ETH_DMADescTypeDef rx_dma_desc[ETH_RX_DESC_CNT];
 __attribute__((aligned(32))) static ETH_DMADescTypeDef tx_dma_desc[ETH_TX_DESC_CNT];
-
-// RX buffers
-__attribute__((aligned(32))) static uint8_t rx_buf[ETH_RX_DESC_CNT][1536];
-__attribute__((aligned(32))) static ETH_BufferTypeDef rx_buf_desc[ETH_RX_DESC_CNT];
-
-// TX buffer
 __attribute__((aligned(32))) static uint8_t tx_buf[1536];
 __attribute__((aligned(32))) static ETH_BufferTypeDef tx_buf_desc;
-
-void ETH1_IRQHandler(void)
-{
-   HAL_ETH_IRQHandler(&eth_handle);
-   eth_rx_process();
-}
 
 static void eth_pin_init()
 {
@@ -129,7 +115,7 @@ static int eth_phy_init(void)
 
    /* Reset PHY */
    if (HAL_ETH_WritePHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_BCR, LAN8742_BCR_SOFT_RESET) != HAL_OK) {
+            LAN8742_BCR, LAN8742_BCR_SOFT_RESET) != HAL_OK) {
       my_printf("PHY reset write failed\r\n");
       return -1;
    }
@@ -138,29 +124,29 @@ static int eth_phy_init(void)
    t0 = HAL_GetTick();
    do {
       if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	       LAN8742_BCR, &v) != HAL_OK) {
-	 my_printf("PHY BCR read failed\r\n");
-	 return -1;
+               LAN8742_BCR, &v) != HAL_OK) {
+         my_printf("PHY BCR read failed\r\n");
+         return -1;
       }
       if ((HAL_GetTick() - t0) > ETH_TIMEOUT_MS) {
-	 my_printf("PHY reset timeout\r\n");
-	 return -1;
+         my_printf("PHY reset timeout\r\n");
+         return -1;
       }
    } while (v & LAN8742_BCR_SOFT_RESET);
 
    /* Enable auto-negotiation */
    v |= LAN8742_BCR_AUTONEGO_EN;
    if (HAL_ETH_WritePHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_BCR, v) != HAL_OK) {
+            LAN8742_BCR, v) != HAL_OK) {
       my_printf("Enable auto-negotiation failed\r\n");
       return -1;
    }
 
    /* Optional: read PHY ID to verify MDIO communication */
    if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYI1R, &id1) != HAL_OK ||
-	 HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYI2R, &id2) != HAL_OK) {
+            LAN8742_PHYI1R, &id1) != HAL_OK ||
+         HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
+            LAN8742_PHYI2R, &id2) != HAL_OK) {
       my_printf("PHY ID read failed\r\n");
       return -1;
    }
@@ -185,14 +171,6 @@ static void eth_desc_init(void)
       ETH_MAC_ADDR5,
    };
 
-   eth_handle.Instance = ETH;
-   eth_handle.Init.MACAddr = &mac[0];
-   eth_handle.Init.MediaInterface = HAL_ETH_RMII_MODE;
-   eth_handle.Init.TxDesc = tx_dma_desc;
-   eth_handle.Init.RxDesc = rx_dma_desc;
-   eth_handle.Init.RxBuffLen = 1536;
-   eth_handle.Init.ClockSelection = HAL_ETH1_REF_CLK_RX_CLK_PIN;
-
    memset(&tx_conf, 0 , sizeof(ETH_TxPacketConfigTypeDef));
    tx_conf.Attributes = ETH_TX_PACKETS_FEATURES_CSUM | ETH_TX_PACKETS_FEATURES_CRCPAD;
    tx_conf.ChecksumCtrl = ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC;
@@ -202,6 +180,14 @@ static void eth_desc_init(void)
    tx_buf_desc.buffer = tx_buf;
    tx_buf_desc.next = NULL;
    tx_conf.TxBuffer = &tx_buf_desc;
+
+   eth_handle.Instance = ETH;
+   eth_handle.Init.MACAddr = &mac[0];
+   eth_handle.Init.MediaInterface = HAL_ETH_RMII_MODE;
+   eth_handle.Init.TxDesc = tx_dma_desc;
+   eth_handle.Init.RxDesc = rx_dma_desc;
+   eth_handle.Init.RxBuffLen = 1536;
+   eth_handle.Init.ClockSelection = HAL_ETH1_REF_CLK_RX_CLK_PIN;
 }
 
 void eth_init(void)
@@ -220,16 +206,6 @@ void eth_init(void)
       return;
    }
 
-   for (unsigned int i = 0; i < ETH_RX_DESC_CNT; i++)
-   {
-      rx_buf_desc[i].buffer = rx_buf[i];
-      rx_buf_desc[i].len    = 1536;
-      rx_buf_desc[i].next   = (i < ETH_RX_DESC_CNT-1) ? &rx_buf_desc[i+1] : NULL;
-
-      // Tell HAL about each RX buffer
-      HAL_ETH_SetRxBuffer(&eth_handle, i, &rx_buf_desc[i]);
-   }
-
    IRQ_SetPriority(ETH1_IRQn, PRIO_ETH);
    IRQ_Enable(ETH1_IRQn);
 
@@ -241,7 +217,7 @@ void eth_init(void)
    HAL_ETH_Start(&eth_handle);
 }
 
-void eth_phy_status(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+void eth_status(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)argc;
    (void)arg1;
@@ -253,7 +229,7 @@ void eth_phy_status(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    // Read basic status register
    if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_BSR, &v) != HAL_OK) {
+            LAN8742_BSR, &v) != HAL_OK) {
       my_printf("PHY BSR read failed\r\n");
       return;
    }
@@ -265,18 +241,18 @@ void eth_phy_status(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    // Read vendor-specific status register
    if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYSCSR, &phy_status) != HAL_OK) {
+            LAN8742_PHYSCSR, &phy_status) != HAL_OK) {
       my_printf("PHY PHYSCSR read failed\r\n");
       return;
    }
 
    // Determine speed
    const int speed_100 = (phy_status & (LAN8742_PHYSCSR_100BTX_FD |
-	    LAN8742_PHYSCSR_100BTX_HD)) ? 1 : 0;
+            LAN8742_PHYSCSR_100BTX_HD)) ? 1 : 0;
 
    // Determine duplex
    const int full_duplex = (phy_status & (LAN8742_PHYSCSR_10BT_FD |
-	    LAN8742_PHYSCSR_100BTX_FD)) ? 1 : 0;
+            LAN8742_PHYSCSR_100BTX_FD)) ? 1 : 0;
 
    // Print full status to user
    my_printf("Ethernet link is up\r\n");

@@ -423,6 +423,10 @@ static void DMA2_Stream4_IRQHandler(void)
 {
 }
 
+static void ETH1_IRQHandler(void)
+{
+}
+
 static void ETH1_WKUP_IRQHandler(void)
 {
 }
