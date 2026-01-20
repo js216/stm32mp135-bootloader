@@ -47,15 +47,28 @@
 #define LAN8742_PHYID1_EXPECT     ((uint16_t)0x0007U)
 #define LAN8742_PHYID2_EXPECT     ((uint16_t)0xC131U)
 
+static void eth_rx_process(void);
+
 // global variables
 static ETH_HandleTypeDef eth_handle;
 static ETH_TxPacketConfigTypeDef tx_conf;
-static ETH_DMADescTypeDef rx_dma_desc[ETH_RX_DESC_CNT];
-static ETH_DMADescTypeDef tx_dma_desc[ETH_TX_DESC_CNT];
+
+// descriptors
+__attribute__((aligned(32))) static ETH_DMADescTypeDef rx_dma_desc[ETH_RX_DESC_CNT];
+__attribute__((aligned(32))) static ETH_DMADescTypeDef tx_dma_desc[ETH_TX_DESC_CNT];
+
+// RX buffers
+__attribute__((aligned(32))) static uint8_t rx_buf[ETH_RX_DESC_CNT][1536];
+__attribute__((aligned(32))) static ETH_BufferTypeDef rx_buf_desc[ETH_RX_DESC_CNT];
+
+// TX buffer
+__attribute__((aligned(32))) static uint8_t tx_buf[1536];
+__attribute__((aligned(32))) static ETH_BufferTypeDef tx_buf_desc;
 
 void ETH1_IRQHandler(void)
 {
    HAL_ETH_IRQHandler(&eth_handle);
+   eth_rx_process();
 }
 
 static void eth_pin_init()
@@ -161,77 +174,18 @@ static int eth_phy_init(void)
    return 0;
 }
 
-/**
- * @brief Read current link speed and duplex status from LAN8742 PHY.
- *
- * Reads the PHY basic status register to verify link is up, then reads the
- * LAN8742 vendor-specific status register to determine negotiated speed and
- * duplex mode. This function does not modify PHY configuration.
- *
- * @param speed_100   Output: set to 1 if link speed is 100 Mbps, 0 if 10 Mbps.
- * @param full_duplex Output: set to 1 if link is full-duplex, 0 if half-duplex.
- *
- * @retval 0  link is up and status fields were read successfully.
- * @retval -1 MDIO access failed or link is currently down.
- */
-static int eth_phy_status(int *speed_100, int *full_duplex)
+static void eth_desc_init(void)
 {
-   uint32_t v, phy_status;
-
-   /* Read basic status register */
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_BSR, &v) != HAL_OK) {
-      my_printf("PHY BSR read failed\r\n");
-      return -1;
-   }
-
-   if ((v & LAN8742_BSR_LINK_STATUS) == 0u) {
-      my_printf("Link is down (no cable or remote inactive)\r\n");
-      return -1;
-   }
-
-   /* Read vendor-specific status register */
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYSCSR, &phy_status) != HAL_OK) {
-      my_printf("PHY PHYSCSR read failed\r\n");
-      return -1;
-   }
-
-   /* Determine speed */
-   *speed_100 = (phy_status & (LAN8742_PHYSCSR_100BTX_FD |
-	    LAN8742_PHYSCSR_100BTX_HD)) ? 1 : 0;
-
-   /* Determine duplex */
-   *full_duplex = (phy_status & (LAN8742_PHYSCSR_10BT_FD |
-	    LAN8742_PHYSCSR_100BTX_FD)) ? 1 : 0;
-
-   /* Print full status to user */
-   my_printf("Ethernet link is up\r\n");
-   my_printf("  Speed: %s Mbps\r\n", *speed_100 ? "100" : "10");
-   my_printf("  Duplex: %s\r\n", *full_duplex ? "full" : "half");
-   my_printf("  BSR = 0x%04lX, PHYSCSR = 0x%04lX\r\n", v, phy_status);
-
-   return 0;
-}
-
-void eth_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
-{
-   (void)argc;
-   (void)arg1;
-   (void)arg2;
-   (void)arg3;
-
-   eth_pin_init();
-
-   static uint8_t mac[6];
+   static uint8_t mac[6] = {
+      ETH_MAC_ADDR0,
+      ETH_MAC_ADDR1,
+      ETH_MAC_ADDR2,
+      ETH_MAC_ADDR3,
+      ETH_MAC_ADDR4,
+      ETH_MAC_ADDR5,
+   };
 
    eth_handle.Instance = ETH;
-   mac[0] = ETH_MAC_ADDR0;
-   mac[1] = ETH_MAC_ADDR1;
-   mac[2] = ETH_MAC_ADDR2;
-   mac[3] = ETH_MAC_ADDR3;
-   mac[4] = ETH_MAC_ADDR4;
-   mac[5] = ETH_MAC_ADDR5;
    eth_handle.Init.MACAddr = &mac[0];
    eth_handle.Init.MediaInterface = HAL_ETH_RMII_MODE;
    eth_handle.Init.TxDesc = tx_dma_desc;
@@ -239,28 +193,157 @@ void eth_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    eth_handle.Init.RxBuffLen = 1536;
    eth_handle.Init.ClockSelection = HAL_ETH1_REF_CLK_RX_CLK_PIN;
 
-   if (HAL_ETH_Init(&eth_handle) != HAL_OK) {
-      my_printf("HAL_ETH_Init(&eth_handle) != HAL_OK\r\n");
-      return;
-   }
-
    memset(&tx_conf, 0 , sizeof(ETH_TxPacketConfigTypeDef));
    tx_conf.Attributes = ETH_TX_PACKETS_FEATURES_CSUM | ETH_TX_PACKETS_FEATURES_CRCPAD;
    tx_conf.ChecksumCtrl = ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC;
    tx_conf.CRCPadCtrl = ETH_CRC_PAD_INSERT;
 
-   IRQ_SetPriority(ETH1_IRQn, PRIO_ETH);
-   IRQ_Enable(ETH1_IRQn);
+   memset(&tx_buf_desc, 0, sizeof(tx_buf_desc));
+   tx_buf_desc.buffer = tx_buf;
+   tx_buf_desc.next = NULL;
+   tx_conf.TxBuffer = &tx_buf_desc;
+}
+
+void eth_init(void)
+{
+   eth_pin_init();
 
    __HAL_RCC_ETH1CK_CLK_ENABLE();
    __HAL_RCC_ETH1MAC_CLK_ENABLE();
    __HAL_RCC_ETH1TX_CLK_ENABLE();
    __HAL_RCC_ETH1RX_CLK_ENABLE();
 
+   eth_desc_init();
+
+   if (HAL_ETH_Init(&eth_handle) != HAL_OK) {
+      my_printf("HAL_ETH_Init(&eth_handle) != HAL_OK\r\n");
+      return;
+   }
+
+   for (unsigned int i = 0; i < ETH_RX_DESC_CNT; i++)
+   {
+      rx_buf_desc[i].buffer = rx_buf[i];
+      rx_buf_desc[i].len    = 1536;
+      rx_buf_desc[i].next   = (i < ETH_RX_DESC_CNT-1) ? &rx_buf_desc[i+1] : NULL;
+
+      // Tell HAL about each RX buffer
+      HAL_ETH_SetRxBuffer(&eth_handle, i, &rx_buf_desc[i]);
+   }
+
+   IRQ_SetPriority(ETH1_IRQn, PRIO_ETH);
+   IRQ_Enable(ETH1_IRQn);
+
    if (eth_phy_init() != 0) {
       my_printf("eth_phy_init() != 0\r\n");
       return;
    }
+
+   HAL_ETH_Start(&eth_handle);
+}
+
+void eth_phy_status(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+
+   uint32_t v;
+   uint32_t phy_status;
+
+   // Read basic status register
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
+	    LAN8742_BSR, &v) != HAL_OK) {
+      my_printf("PHY BSR read failed\r\n");
+      return;
+   }
+
+   if ((v & LAN8742_BSR_LINK_STATUS) == 0u) {
+      my_printf("Link is down (no cable or remote inactive)\r\n");
+      return;
+   }
+
+   // Read vendor-specific status register
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
+	    LAN8742_PHYSCSR, &phy_status) != HAL_OK) {
+      my_printf("PHY PHYSCSR read failed\r\n");
+      return;
+   }
+
+   // Determine speed
+   const int speed_100 = (phy_status & (LAN8742_PHYSCSR_100BTX_FD |
+	    LAN8742_PHYSCSR_100BTX_HD)) ? 1 : 0;
+
+   // Determine duplex
+   const int full_duplex = (phy_status & (LAN8742_PHYSCSR_10BT_FD |
+	    LAN8742_PHYSCSR_100BTX_FD)) ? 1 : 0;
+
+   // Print full status to user
+   my_printf("Ethernet link is up\r\n");
+   my_printf("  Speed: %s Mbps\r\n", speed_100 ? "100" : "10");
+   my_printf("  Duplex: %s\r\n", full_duplex ? "full" : "half");
+   my_printf("  BSR = 0x%04lX, PHYSCSR = 0x%04lX\r\n", v, phy_status);
+}
+
+static uint16_t build_test_frame(uint8_t *buf)
+{
+   uint32_t i = 0;
+
+   // Destination MAC: broadcast
+   const uint8_t dst[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+   memcpy(&buf[i], dst, sizeof(dst));
+   i += sizeof(dst);
+
+   // Source MAC: our MAC
+   const uint8_t src[6] = {
+      ETH_MAC_ADDR0, ETH_MAC_ADDR1, ETH_MAC_ADDR2,
+      ETH_MAC_ADDR3, ETH_MAC_ADDR4, ETH_MAC_ADDR5
+   };
+   memcpy(&buf[i], src, sizeof(src));
+   i += sizeof(src);
+
+   // Ethertype
+   const uint16_t ethertype = 0x88B5;
+   buf[i++] = (uint8_t)(ethertype >> 8);
+   buf[i++] = (uint8_t)(ethertype & 0xFF);
+
+   // Payload
+   const char msg[] = "STM32MP135 RAW ETH TEST";
+   memcpy(&buf[i], msg, sizeof(msg) - 1);
+   i += sizeof(msg) - 1;
+
+   // Pad to minimum Ethernet frame length (60 bytes)
+   while (i < 60) {
+      buf[i++] = 0;
+   }
+
+   return (uint16_t)i;
+}
+
+void eth_send_test_frame(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+
+   // Build frame in TX buffer
+   const uint16_t len = build_test_frame(tx_buf);
+
+   // Set up buffer descriptor
+   tx_buf_desc.buffer = tx_buf;
+   tx_buf_desc.len    = len;
+   tx_buf_desc.next   = NULL;
+   tx_conf.TxBuffer   = &tx_buf_desc;
+   tx_conf.Length     = len;
+
+   // Transmit
+   if (HAL_ETH_Transmit(&eth_handle, &tx_conf, ETH_TIMEOUT_MS) != HAL_OK) {
+      my_printf("HAL_ETH_Transmit failed\r\n");
+      return;
+   }
+
+   my_printf("Test Ethernet frame sent\r\n");
 }
 
 // end file eth.c

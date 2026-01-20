@@ -26,8 +26,6 @@ MEMORY {
       DDR_HIGH (rwx)      : ORIGIN = 0xC6000000, LENGTH = 512M
 }
 
-/* Select Memory in which code has to be placed and offset of code from start of this memory */ 
-/*REGION_ALIAS("RAM", DDR_BASE);*/
 REGION_ALIAS("RAM", InternalMEM);
 START_OFFSET = 0x00;
 
@@ -139,7 +137,6 @@ SECTIONS
     . = ALIGN(4);
     } >RAM
 
-
     .data . : {
         RW_DATA = .;
         *(.data*)
@@ -160,8 +157,8 @@ SECTIONS
 
     __BSS_SIZE__ = SIZEOF(.bss);
 
-/* 1 TTB Level 1 table */
-/* 4 TTB Level 2 tables */
+    /* 1 TTB Level 1 table */
+    /* 4 TTB Level 2 tables */
     ._TTB : ALIGN(16384) {
        TTB = .;
        . = . + TTB_L1_SIZE;

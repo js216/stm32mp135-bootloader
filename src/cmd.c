@@ -165,12 +165,21 @@ static const struct cmd cmd_list[] = {
      },
 
     {
-     .name         = "eth_init",
+     .name         = "eth_phy_status",
      .syntax       = "",
-     .summary      = "Initialize Ethernet interface",
+     .summary      = "Check Eth1 PHY status",
      .defaults     = NULL,
      .num_defaults = 0,
-     .handler      = eth_init,
+     .handler      = eth_phy_status,
+     },
+
+    {
+     .name         = "send_frame",
+     .syntax       = "",
+     .summary      = "Send an Ethernet frame",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = eth_send_test_frame,
      },
 };
 

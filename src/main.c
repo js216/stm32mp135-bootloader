@@ -42,6 +42,7 @@ int main(void)
    sd_init();
    usb_init();
    lcd_init();
+   eth_init();
    cmd_init();
 
    while (1) {
