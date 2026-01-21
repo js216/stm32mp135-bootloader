@@ -21,6 +21,7 @@
 #include "stm32mp13xx_hal_eth.h"
 #include <stdint.h>
 #include <string.h>
+#include <inttypes.h>
 
 #define ETH_MAC_ADDR0  0x00U
 #define ETH_MAC_ADDR1  0x19U
@@ -35,7 +36,11 @@
 #define LAN8742_BSR               ((uint16_t)0x0001U)
 #define LAN8742_PHYI1R            ((uint16_t)0x0002U)
 #define LAN8742_PHYI2R            ((uint16_t)0x0003U)
+#define LAN8742_PHYSMR            ((uint16_t)0x0012U)
 #define LAN8742_PHYSCSR           ((uint16_t)0x001FU)
+#define LAN8742_PHYSECR           ((uint16_t)0x001AU)
+#define LAN8742_PHYSCSIR          ((uint16_t)0x001BU)
+#define LAN8742_PHYISFR           ((uint16_t)0x001DU)
 #define LAN8742_BCR_SOFT_RESET    ((uint16_t)0x8000U)
 #define LAN8742_BCR_AUTONEGO_EN   ((uint16_t)0x1000U)
 #define LAN8742_BSR_LINK_STATUS   ((uint16_t)0x0004U)
@@ -64,34 +69,60 @@ static void eth_pin_init()
    init.Mode = GPIO_MODE_AF_PP;
    init.Pull = GPIO_NOPULL;
 
-   // Configure PA1, PA2
-   init.Pin =  GPIO_PIN_1 | GPIO_PIN_2;
-   init.Alternate = GPIO_AF11_ETH;
-   HAL_GPIO_Init(GPIOA, &init);
+#ifdef ETH_RX_CLK_PORT
+   init.Pin       = ETH_RX_CLK_PIN;
+   init.Alternate = ETH_RX_CLK_AF;
+   HAL_GPIO_Init(ETH_RX_CLK_PORT, &init);
+#endif
 
-   // Configure PB11
-   init.Pin = GPIO_PIN_11;
-   init.Alternate = GPIO_AF11_ETH;
-   HAL_GPIO_Init(GPIOB, &init);
+#ifdef ETH_CLK_PORT
+   init.Pin       = ETH_CLK_PIN;
+   init.Alternate = ETH_CLK_AF;
+   HAL_GPIO_Init(ETH_CLK_PORT, &init);
+#endif
 
-   // Configure PC1
-   init.Pin = GPIO_PIN_1;
-   init.Alternate = GPIO_AF10_ETH;
-   HAL_GPIO_Init(GPIOC, &init);
+   init.Pin       = ETH_MDIO_PIN;
+   init.Alternate = ETH_MDIO_AF;
+   HAL_GPIO_Init(ETH_MDIO_PORT, &init);
 
-   // Configure PC4 and PC5
-   init.Pin = GPIO_PIN_4 | GPIO_PIN_5;
-   init.Alternate = GPIO_AF11_ETH;
-   HAL_GPIO_Init(GPIOC, &init);
+   init.Pin       = ETH_TX_EN_PIN;
+   init.Alternate = ETH_TX_EN_AF;
+   HAL_GPIO_Init(ETH_TX_EN_PORT, &init);
 
-   // Configure PG2, PG13 and PG14
-   init.Pin = GPIO_PIN_2 | GPIO_PIN_13 | GPIO_PIN_14;
-   HAL_GPIO_Init(GPIOG, &init);
+   init.Pin       = ETH_CRS_DV_PIN;
+   init.Alternate = ETH_CRS_DV_AF;
+   HAL_GPIO_Init(ETH_CRS_DV_PORT, &init);
+
+   init.Pin       = ETH_RXD0_PIN;
+   init.Alternate = ETH_RXD0_AF;
+   HAL_GPIO_Init(ETH_RXD0_PORT, &init);
+
+   init.Pin       = ETH_RXD1_PIN;
+   init.Alternate = ETH_RXD1_AF;
+   HAL_GPIO_Init(ETH_RXD1_PORT, &init);
+
+   init.Pin       = ETH_MDC_PIN;
+   init.Alternate = ETH_MDC_AF;
+   HAL_GPIO_Init(ETH_MDC_PORT, &init);
+
+   init.Pin       = ETH_TXD0_PIN;
+   init.Alternate = ETH_TXD0_AF;
+   HAL_GPIO_Init(ETH_TXD0_PORT, &init);
+
+   init.Pin       = ETH_TXD1_PIN;
+   init.Alternate = ETH_TXD1_AF;
+   HAL_GPIO_Init(ETH_TXD1_PORT, &init);
 
 #if (USE_MCP23x17 == 1)
    mcp_init();
-   mcp_set_pin_mode(MCP_PIN_9, true);
-   mcp_pin_write(MCP_PIN_9, true);
+   mcp_set_pin_mode(ETH_NRST_PIN, true);
+   mcp_pin_write(ETH_NRST_PIN, true);
+#else
+   init.Speed = GPIO_SPEED_FREQ_LOW;
+   init.Mode  = GPIO_MODE_OUTPUT_PP;
+   init.Pin   = ETH_NRST_PIN;
+   HAL_GPIO_Init(ETH_NRST_PORT, &init);
+   HAL_GPIO_WritePin(ETH_NRST_PORT, ETH_NRST_PIN, GPIO_PIN_SET);
 #endif
 }
 
@@ -115,7 +146,7 @@ static int eth_phy_init(void)
 
    /* Reset PHY */
    if (HAL_ETH_WritePHYRegister(&eth_handle, LAN8742_ADDR,
-            LAN8742_BCR, LAN8742_BCR_SOFT_RESET) != HAL_OK) {
+	    LAN8742_BCR, LAN8742_BCR_SOFT_RESET) != HAL_OK) {
       my_printf("PHY reset write failed\r\n");
       return -1;
    }
@@ -124,29 +155,29 @@ static int eth_phy_init(void)
    t0 = HAL_GetTick();
    do {
       if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-               LAN8742_BCR, &v) != HAL_OK) {
-         my_printf("PHY BCR read failed\r\n");
-         return -1;
+	       LAN8742_BCR, &v) != HAL_OK) {
+	 my_printf("PHY BCR read failed\r\n");
+	 return -1;
       }
       if ((HAL_GetTick() - t0) > ETH_TIMEOUT_MS) {
-         my_printf("PHY reset timeout\r\n");
-         return -1;
+	 my_printf("PHY reset timeout\r\n");
+	 return -1;
       }
    } while (v & LAN8742_BCR_SOFT_RESET);
 
    /* Enable auto-negotiation */
    v |= LAN8742_BCR_AUTONEGO_EN;
    if (HAL_ETH_WritePHYRegister(&eth_handle, LAN8742_ADDR,
-            LAN8742_BCR, v) != HAL_OK) {
+	    LAN8742_BCR, v) != HAL_OK) {
       my_printf("Enable auto-negotiation failed\r\n");
       return -1;
    }
 
    /* Optional: read PHY ID to verify MDIO communication */
    if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-            LAN8742_PHYI1R, &id1) != HAL_OK ||
-         HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-            LAN8742_PHYI2R, &id2) != HAL_OK) {
+	    LAN8742_PHYI1R, &id1) != HAL_OK ||
+	 HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
+	    LAN8742_PHYI2R, &id2) != HAL_OK) {
       my_printf("PHY ID read failed\r\n");
       return -1;
    }
@@ -187,7 +218,7 @@ static void eth_desc_init(void)
    eth_handle.Init.TxDesc = tx_dma_desc;
    eth_handle.Init.RxDesc = rx_dma_desc;
    eth_handle.Init.RxBuffLen = 1536;
-   eth_handle.Init.ClockSelection = HAL_ETH1_REF_CLK_RX_CLK_PIN;
+   eth_handle.Init.ClockSelection = ETH_CLK_SRC;
 }
 
 void eth_init(void)
@@ -224,41 +255,93 @@ void eth_status(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg2;
    (void)arg3;
 
-   uint32_t v;
-   uint32_t phy_status;
-
-   // Read basic status register
+   // Read Basic Control Register
+   uint32_t bcr;
    if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-            LAN8742_BSR, &v) != HAL_OK) {
+	    LAN8742_BCR, &bcr) != HAL_OK) {
+      my_printf("PHY BCR read failed\r\n");
+      return;
+   }
+
+   // Read Basic Status Register
+   uint32_t v;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
+	    LAN8742_BSR, &v) != HAL_OK) {
       my_printf("PHY BSR read failed\r\n");
+      return;
+   }
+
+   // Read Special Control/Status Register
+   uint32_t phy_status;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
+	    LAN8742_PHYSCSR, &phy_status) != HAL_OK) {
+      my_printf("PHY PHYSCSR read failed\r\n");
+      return;
+   }
+
+   // Read Interrupt Source Flag Register
+   uint32_t isfr;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
+	    LAN8742_PHYISFR, &isfr) != HAL_OK) {
+      my_printf("PHY PHYISFR read failed\r\n");
+      return;
+   }
+
+   // Read Special Modes Register
+   uint32_t smr;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
+	    LAN8742_PHYSMR, &smr) != HAL_OK) {
+      my_printf("PHY PHYSMR read failed\r\n");
+      return;
+   }
+
+   // Read Symbol Error Counter Register
+   uint32_t secr;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
+	    LAN8742_PHYSCSR, &secr) != HAL_OK) {
+      my_printf("PHY PHYSECR read failed\r\n");
+      return;
+   }
+
+   // Read Special Control/Status Indications Register
+   uint32_t scsir;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
+	    LAN8742_PHYSCSR, &scsir) != HAL_OK) {
+      my_printf("PHY PHYSCSIR read failed\r\n");
       return;
    }
 
    if ((v & LAN8742_BSR_LINK_STATUS) == 0u) {
       my_printf("Link is down (no cable or remote inactive)\r\n");
-      return;
-   }
-
-   // Read vendor-specific status register
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-            LAN8742_PHYSCSR, &phy_status) != HAL_OK) {
-      my_printf("PHY PHYSCSR read failed\r\n");
+      my_printf("  BCR = 0x%04lX\r\n", bcr);
+      my_printf("  BSR = 0x%04lX, PHYSCSR = 0x%04lX, ", v, phy_status);
+      my_printf("ISFR = 0x%04lX, ", isfr);
+      my_printf("SMR = 0x%04lX\r\n", smr);
+      my_printf("  SECR = 0x%04lX, ", secr);
+      my_printf("SCSIR = 0x%04lX, ", scsir);
+      my_printf("SYSCFG_PMCSETR = 0x%04lX\r\n", SYSCFG->PMCSETR);
       return;
    }
 
    // Determine speed
    const int speed_100 = (phy_status & (LAN8742_PHYSCSR_100BTX_FD |
-            LAN8742_PHYSCSR_100BTX_HD)) ? 1 : 0;
+	    LAN8742_PHYSCSR_100BTX_HD)) ? 1 : 0;
 
    // Determine duplex
    const int full_duplex = (phy_status & (LAN8742_PHYSCSR_10BT_FD |
-            LAN8742_PHYSCSR_100BTX_FD)) ? 1 : 0;
+	    LAN8742_PHYSCSR_100BTX_FD)) ? 1 : 0;
 
    // Print full status to user
    my_printf("Ethernet link is up\r\n");
    my_printf("  Speed: %s Mbps\r\n", speed_100 ? "100" : "10");
    my_printf("  Duplex: %s\r\n", full_duplex ? "full" : "half");
-   my_printf("  BSR = 0x%04lX, PHYSCSR = 0x%04lX\r\n", v, phy_status);
+   my_printf("  BCR = 0x%04lX\r\n", bcr);
+   my_printf("  BSR = 0x%04lX, PHYSCSR = 0x%04lX, ", v, phy_status);
+   my_printf("ISFR = 0x%04lX, ", isfr);
+   my_printf("SMR = 0x%04lX\r\n", smr);
+   my_printf("  SECR = 0x%04lX, ", secr);
+   my_printf("SCSIR = 0x%04lX, ", scsir);
+   my_printf("SYSCFG_PMCSETR = 0x%04lX\r\n", SYSCFG->PMCSETR);
 }
 
 static uint16_t build_test_frame(uint8_t *buf)

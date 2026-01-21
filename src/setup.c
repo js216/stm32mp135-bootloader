@@ -128,9 +128,9 @@ void sysclk_init(void)
    rcc_oscinitstructure.PLL3.PLLState  = RCC_PLL_ON;
    rcc_oscinitstructure.PLL3.PLLSource = RCC_PLL3SOURCE_HSE;
    rcc_oscinitstructure.PLL3.PLLM      = 2;
-   rcc_oscinitstructure.PLL3.PLLN      = 34;
+   rcc_oscinitstructure.PLL3.PLLN      = 50;
    rcc_oscinitstructure.PLL3.PLLP      = 2;
-   rcc_oscinitstructure.PLL3.PLLQ      = 17;
+   rcc_oscinitstructure.PLL3.PLLQ      = 12;
    rcc_oscinitstructure.PLL3.PLLR      = 2;
    rcc_oscinitstructure.PLL3.PLLRGE    = RCC_PLL3IFRANGE_1;
    rcc_oscinitstructure.PLL3.PLLFRACV  = 0x1a04;

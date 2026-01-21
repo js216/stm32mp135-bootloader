@@ -103,6 +103,36 @@
 #define LCD_B7_PIN     GPIO_PIN_1
 #define LCD_B7_AF      GPIO_AF13_LCD
 
+#define ETH_CLK_SRC     HAL_ETH1_REF_CLK_RX_CLK_PIN
+#define ETH_RX_CLK_PORT GPIOA
+#define ETH_RX_CLK_PIN  GPIO_PIN_1
+#define ETH_RX_CLK_AF   GPIO_AF11_ETH
+#define ETH_MDIO_PORT   GPIOA
+#define ETH_MDIO_PIN    GPIO_PIN_2
+#define ETH_MDIO_AF     GPIO_AF11_ETH
+#define ETH_TX_EN_PORT  GPIOB
+#define ETH_TX_EN_PIN   GPIO_PIN_11
+#define ETH_TX_EN_AF    GPIO_AF11_ETH
+#define ETH_CRS_DV_PORT GPIOC
+#define ETH_CRS_DV_PIN  GPIO_PIN_1
+#define ETH_CRS_DV_AF   GPIO_AF10_ETH
+#define ETH_RXD0_PORT   GPIOC
+#define ETH_RXD0_PIN    GPIO_PIN_4
+#define ETH_RXD0_AF     GPIO_AF11_ETH
+#define ETH_RXD1_PORT   GPIOC
+#define ETH_RXD1_PIN    GPIO_PIN_5
+#define ETH_RXD1_AF     GPIO_AF11_ETH
+#define ETH_MDC_PORT    GPIOG
+#define ETH_MDC_PIN     GPIO_PIN_2
+#define ETH_MDC_AF      GPIO_AF11_ETH
+#define ETH_TXD0_PORT   GPIOG
+#define ETH_TXD0_PIN    GPIO_PIN_13
+#define ETH_TXD0_AF     GPIO_AF11_ETH
+#define ETH_TXD1_PORT   GPIOG
+#define ETH_TXD1_PIN    GPIO_PIN_14
+#define ETH_TXD1_AF     GPIO_AF11_ETH
+#define ETH_NRST_PIN    MCP_PIN_9
+
 #else
 
 #define USE_STPMIC1x 0
@@ -195,6 +225,40 @@
 #define LCD_B7_PORT    GPIOB
 #define LCD_B7_PIN     GPIO_PIN_6
 #define LCD_B7_AF      GPIO_AF14_LCD
+
+#define ETH_CLK_SRC       HAL_ETH1_REF_CLK_RCC
+#define ETH_CLK_PORT      GPIOA
+#define ETH_CLK_PIN       GPIO_PIN_11
+#define ETH_CLK_AF        GPIO_AF11_ETH
+#define ETH_MDIO_PORT     GPIOG
+#define ETH_MDIO_PIN      GPIO_PIN_3
+#define ETH_MDIO_AF       GPIO_AF11_ETH
+#define ETH_TX_EN_PORT    GPIOB
+#define ETH_TX_EN_PIN     GPIO_PIN_11
+#define ETH_TX_EN_AF      GPIO_AF11_ETH
+#define ETH_CRS_DV_PORT   GPIOA
+#define ETH_CRS_DV_PIN    GPIO_PIN_7
+#define ETH_CRS_DV_AF     GPIO_AF11_ETH
+#define ETH_RXD0_PORT     GPIOC
+#define ETH_RXD0_PIN      GPIO_PIN_4
+#define ETH_RXD0_AF       GPIO_AF11_ETH
+#define ETH_RXD1_PORT     GPIOC
+#define ETH_RXD1_PIN      GPIO_PIN_5
+#define ETH_RXD1_AF       GPIO_AF11_ETH
+#define ETH_MDC_PORT      GPIOG
+#define ETH_MDC_PIN       GPIO_PIN_2
+#define ETH_MDC_AF        GPIO_AF11_ETH
+#define ETH_TXD0_PORT     GPIOG
+#define ETH_TXD0_PIN      GPIO_PIN_13
+#define ETH_TXD0_AF       GPIO_AF11_ETH
+#define ETH_TXD1_PORT     GPIOG
+#define ETH_TXD1_PIN      GPIO_PIN_14
+#define ETH_TXD1_AF       GPIO_AF11_ETH
+#define ETH_PHY_INTN_PORT GPIOG
+#define ETH_PHY_INTN_PIN  GPIO_PIN_12
+#define ETH_PHY_INTN_AF   GPIO_AF11_ETH
+#define ETH_NRST_PORT     GPIOG
+#define ETH_NRST_PIN      GPIO_PIN_11
 
 #endif
 

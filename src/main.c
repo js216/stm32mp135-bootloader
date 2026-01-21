@@ -9,6 +9,7 @@
 
 #include "cmd.h"
 #include "ddr.h"
+#include "eth.h"
 #include "lcd.h"
 #include "sd.h"
 #include "setup.h"
