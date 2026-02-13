@@ -226,7 +226,10 @@
 #define LCD_B7_PIN     GPIO_PIN_6
 #define LCD_B7_AF      GPIO_AF14_LCD
 
-#define ETH_CLK_SRC       HAL_ETH1_REF_CLK_RCC
+#define ETH_CLK_SRC HAL_ETH1_REF_CLK_RCC
+#undef ETH_RX_CLK_PORT
+#undef ETH_RX_CLK_PIN
+#undef ETH_RX_CLK_AF
 #define ETH_CLK_PORT      GPIOA
 #define ETH_CLK_PIN       GPIO_PIN_11
 #define ETH_CLK_AF        GPIO_AF11_ETH

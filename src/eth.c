@@ -10,18 +10,21 @@
 #include "eth.h"
 #include "board.h"
 #include "irq.h"
-#include "mcp23x17.h"
+#include "irq_ctrl.h"
 #include "printf.h"
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_def.h"
-#include "stm32mp13xx_hal_gpio.h"
-#include "stm32mp13xx_hal_gpio_ex.h"
-#include "stm32mp13xx_hal_rcc.h"
 #include "stm32mp13xx_hal_eth.h"
+#include "stm32mp13xx_hal_gpio.h"
+#include "stm32mp13xx_hal_rcc.h"
+#include <inttypes.h>
 #include <stdint.h>
 #include <string.h>
-#include <inttypes.h>
+
+#if (USE_MCP23x17 == 1)
+#include "mcp23x17.h"
+#endif
 
 #define ETH_MAC_ADDR0  0x00U
 #define ETH_MAC_ADDR1  0x19U
@@ -29,7 +32,7 @@
 #define ETH_MAC_ADDR3  0x12U
 #define ETH_MAC_ADDR4  0x00U
 #define ETH_MAC_ADDR5  0x00U
-#define ETH_TIMEOUT_MS 1000U 
+#define ETH_TIMEOUT_MS 1000U
 
 #define LAN8742_ADDR              ((uint16_t)0x0000U)
 #define LAN8742_BCR               ((uint16_t)0x0000U)
@@ -57,17 +60,19 @@ static ETH_HandleTypeDef eth_handle;
 static ETH_TxPacketConfigTypeDef tx_conf;
 
 // descriptors
-__attribute__((aligned(32))) static ETH_DMADescTypeDef rx_dma_desc[ETH_RX_DESC_CNT];
-__attribute__((aligned(32))) static ETH_DMADescTypeDef tx_dma_desc[ETH_TX_DESC_CNT];
+__attribute__((
+    aligned(32))) static ETH_DMADescTypeDef rx_dma_desc[ETH_RX_DESC_CNT];
+__attribute__((
+    aligned(32))) static ETH_DMADescTypeDef tx_dma_desc[ETH_TX_DESC_CNT];
 __attribute__((aligned(32))) static uint8_t tx_buf[1536];
 __attribute__((aligned(32))) static ETH_BufferTypeDef tx_buf_desc;
 
-static void eth_pin_init()
+static void eth_pin_init(void)
 {
    GPIO_InitTypeDef init = {0};
-   init.Speed = GPIO_SPEED_FREQ_HIGH;
-   init.Mode = GPIO_MODE_AF_PP;
-   init.Pull = GPIO_NOPULL;
+   init.Speed            = GPIO_SPEED_FREQ_HIGH;
+   init.Mode             = GPIO_MODE_AF_PP;
+   init.Pull             = GPIO_NOPULL;
 
 #ifdef ETH_RX_CLK_PORT
    init.Pin       = ETH_RX_CLK_PIN;
@@ -138,15 +143,16 @@ static void eth_pin_init()
  */
 static int eth_phy_init(void)
 {
-   uint32_t v;
-   uint32_t id1, id2;
-   uint32_t t0;
+   uint32_t v   = 0;
+   uint32_t id1 = 0;
+   uint32_t id2 = 0;
+   uint32_t t0  = 0;
 
    HAL_ETH_SetMDIOClockRange(&eth_handle);
 
    /* Reset PHY */
-   if (HAL_ETH_WritePHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_BCR, LAN8742_BCR_SOFT_RESET) != HAL_OK) {
+   if (HAL_ETH_WritePHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_BCR,
+                                LAN8742_BCR_SOFT_RESET) != HAL_OK) {
       my_printf("PHY reset write failed\r\n");
       return -1;
    }
@@ -154,37 +160,38 @@ static int eth_phy_init(void)
    /* Wait for reset to complete (typically a few ms) */
    t0 = HAL_GetTick();
    do {
-      if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	       LAN8742_BCR, &v) != HAL_OK) {
-	 my_printf("PHY BCR read failed\r\n");
-	 return -1;
+      if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_BCR, &v) !=
+          HAL_OK) {
+         my_printf("PHY BCR read failed\r\n");
+         return -1;
       }
       if ((HAL_GetTick() - t0) > ETH_TIMEOUT_MS) {
-	 my_printf("PHY reset timeout\r\n");
-	 return -1;
+         my_printf("PHY reset timeout\r\n");
+         return -1;
       }
    } while (v & LAN8742_BCR_SOFT_RESET);
 
    /* Enable auto-negotiation */
    v |= LAN8742_BCR_AUTONEGO_EN;
-   if (HAL_ETH_WritePHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_BCR, v) != HAL_OK) {
+   if (HAL_ETH_WritePHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_BCR, v) !=
+       HAL_OK) {
       my_printf("Enable auto-negotiation failed\r\n");
       return -1;
    }
 
    /* Optional: read PHY ID to verify MDIO communication */
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYI1R, &id1) != HAL_OK ||
-	 HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYI2R, &id2) != HAL_OK) {
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_PHYI1R,
+                               &id1) != HAL_OK ||
+       HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_PHYI2R,
+                               &id2) != HAL_OK) {
       my_printf("PHY ID read failed\r\n");
       return -1;
    }
 
    // Check ID of the PHY is correct
    if ((id1 != LAN8742_PHYID1_EXPECT) || (id2 != LAN8742_PHYID2_EXPECT)) {
-      my_printf("Unexpected PHY ID: 0x%04lX 0x%04lX\r\n", id1, id2);
+      my_printf("Unexpected PHY ID: 0x%04" PRIX32 " 0x%04" PRIX32 "\r\n", id1,
+                id2);
       return -1;
    }
 
@@ -194,30 +201,27 @@ static int eth_phy_init(void)
 static void eth_desc_init(void)
 {
    static uint8_t mac[6] = {
-      ETH_MAC_ADDR0,
-      ETH_MAC_ADDR1,
-      ETH_MAC_ADDR2,
-      ETH_MAC_ADDR3,
-      ETH_MAC_ADDR4,
-      ETH_MAC_ADDR5,
+       ETH_MAC_ADDR0, ETH_MAC_ADDR1, ETH_MAC_ADDR2,
+       ETH_MAC_ADDR3, ETH_MAC_ADDR4, ETH_MAC_ADDR5,
    };
 
-   memset(&tx_conf, 0 , sizeof(ETH_TxPacketConfigTypeDef));
-   tx_conf.Attributes = ETH_TX_PACKETS_FEATURES_CSUM | ETH_TX_PACKETS_FEATURES_CRCPAD;
+   memset(&tx_conf, 0, sizeof(ETH_TxPacketConfigTypeDef));
+   tx_conf.Attributes =
+       ETH_TX_PACKETS_FEATURES_CSUM | ETH_TX_PACKETS_FEATURES_CRCPAD;
    tx_conf.ChecksumCtrl = ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC;
-   tx_conf.CRCPadCtrl = ETH_CRC_PAD_INSERT;
+   tx_conf.CRCPadCtrl   = ETH_CRC_PAD_INSERT;
 
    memset(&tx_buf_desc, 0, sizeof(tx_buf_desc));
    tx_buf_desc.buffer = tx_buf;
-   tx_buf_desc.next = NULL;
-   tx_conf.TxBuffer = &tx_buf_desc;
+   tx_buf_desc.next   = NULL;
+   tx_conf.TxBuffer   = &tx_buf_desc;
 
-   eth_handle.Instance = ETH;
-   eth_handle.Init.MACAddr = &mac[0];
+   eth_handle.Instance            = ETH;
+   eth_handle.Init.MACAddr        = &mac[0];
    eth_handle.Init.MediaInterface = HAL_ETH_RMII_MODE;
-   eth_handle.Init.TxDesc = tx_dma_desc;
-   eth_handle.Init.RxDesc = rx_dma_desc;
-   eth_handle.Init.RxBuffLen = 1536;
+   eth_handle.Init.TxDesc         = tx_dma_desc;
+   eth_handle.Init.RxDesc         = rx_dma_desc;
+   eth_handle.Init.RxBuffLen      = 1536;
    eth_handle.Init.ClockSelection = ETH_CLK_SRC;
 }
 
@@ -256,92 +260,99 @@ void eth_status(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg3;
 
    // Read Basic Control Register
-   uint32_t bcr;
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_BCR, &bcr) != HAL_OK) {
+   uint32_t bcr = 0;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_BCR, &bcr) !=
+       HAL_OK) {
       my_printf("PHY BCR read failed\r\n");
       return;
    }
 
    // Read Basic Status Register
-   uint32_t v;
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_BSR, &v) != HAL_OK) {
+   uint32_t v = 0;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_BSR, &v) !=
+       HAL_OK) {
       my_printf("PHY BSR read failed\r\n");
       return;
    }
 
    // Read Special Control/Status Register
-   uint32_t phy_status;
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYSCSR, &phy_status) != HAL_OK) {
+   uint32_t phy_status = 0;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_PHYSCSR,
+                               &phy_status) != HAL_OK) {
       my_printf("PHY PHYSCSR read failed\r\n");
       return;
    }
 
    // Read Interrupt Source Flag Register
-   uint32_t isfr;
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYISFR, &isfr) != HAL_OK) {
+   uint32_t isfr = 0;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_PHYISFR,
+                               &isfr) != HAL_OK) {
       my_printf("PHY PHYISFR read failed\r\n");
       return;
    }
 
    // Read Special Modes Register
-   uint32_t smr;
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYSMR, &smr) != HAL_OK) {
+   uint32_t smr = 0;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_PHYSMR,
+                               &smr) != HAL_OK) {
       my_printf("PHY PHYSMR read failed\r\n");
       return;
    }
 
    // Read Symbol Error Counter Register
-   uint32_t secr;
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYSCSR, &secr) != HAL_OK) {
+   uint32_t secr = 0;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_PHYSCSR,
+                               &secr) != HAL_OK) {
       my_printf("PHY PHYSECR read failed\r\n");
       return;
    }
 
    // Read Special Control/Status Indications Register
-   uint32_t scsir;
-   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR,
-	    LAN8742_PHYSCSR, &scsir) != HAL_OK) {
+   uint32_t scsir = 0;
+   if (HAL_ETH_ReadPHYRegister(&eth_handle, LAN8742_ADDR, LAN8742_PHYSCSR,
+                               &scsir) != HAL_OK) {
       my_printf("PHY PHYSCSIR read failed\r\n");
       return;
    }
 
-   if ((v & LAN8742_BSR_LINK_STATUS) == 0u) {
+   if ((v & LAN8742_BSR_LINK_STATUS) == 0U) {
       my_printf("Link is down (no cable or remote inactive)\r\n");
-      my_printf("  BCR = 0x%04lX\r\n", bcr);
-      my_printf("  BSR = 0x%04lX, PHYSCSR = 0x%04lX, ", v, phy_status);
-      my_printf("ISFR = 0x%04lX, ", isfr);
-      my_printf("SMR = 0x%04lX\r\n", smr);
-      my_printf("  SECR = 0x%04lX, ", secr);
-      my_printf("SCSIR = 0x%04lX, ", scsir);
-      my_printf("SYSCFG_PMCSETR = 0x%04lX\r\n", SYSCFG->PMCSETR);
+      my_printf("  BCR = 0x%04" PRIX32 "\r\n", bcr);
+      my_printf("  BSR = 0x%04" PRIX32 ", PHYSCSR = 0x%04" PRIX32 ", ", v,
+                phy_status);
+      my_printf("ISFR = 0x%04" PRIX32 ", ", isfr);
+      my_printf("SMR = 0x%04" PRIX32 "\r\n", smr);
+      my_printf("  SECR = 0x%04" PRIX32 ", ", secr);
+      my_printf("SCSIR = 0x%04" PRIX32 ", ", scsir);
+      my_printf("SYSCFG_PMCSETR = 0x%04" PRIX32 "\r\n", SYSCFG->PMCSETR);
       return;
    }
 
    // Determine speed
-   const int speed_100 = (phy_status & (LAN8742_PHYSCSR_100BTX_FD |
-	    LAN8742_PHYSCSR_100BTX_HD)) ? 1 : 0;
+   const int speed_100 = (phy_status & (uint32_t)(LAN8742_PHYSCSR_100BTX_FD |
+                                                  LAN8742_PHYSCSR_100BTX_HD))
+                             ? 1
+                             : 0;
 
    // Determine duplex
-   const int full_duplex = (phy_status & (LAN8742_PHYSCSR_10BT_FD |
-	    LAN8742_PHYSCSR_100BTX_FD)) ? 1 : 0;
+   const int full_duplex = (phy_status & (uint32_t)(LAN8742_PHYSCSR_10BT_FD |
+                                                    LAN8742_PHYSCSR_100BTX_FD))
+                               ? 1
+                               : 0;
 
    // Print full status to user
    my_printf("Ethernet link is up\r\n");
    my_printf("  Speed: %s Mbps\r\n", speed_100 ? "100" : "10");
    my_printf("  Duplex: %s\r\n", full_duplex ? "full" : "half");
-   my_printf("  BCR = 0x%04lX\r\n", bcr);
-   my_printf("  BSR = 0x%04lX, PHYSCSR = 0x%04lX, ", v, phy_status);
-   my_printf("ISFR = 0x%04lX, ", isfr);
-   my_printf("SMR = 0x%04lX\r\n", smr);
-   my_printf("  SECR = 0x%04lX, ", secr);
-   my_printf("SCSIR = 0x%04lX, ", scsir);
-   my_printf("SYSCFG_PMCSETR = 0x%04lX\r\n", SYSCFG->PMCSETR);
+
+   my_printf("  BCR = 0x%04" PRIX32 "\r\n", bcr);
+   my_printf("  BSR = 0x%04" PRIX32 ", PHYSCSR = 0x%04" PRIX32 ", ", v,
+             phy_status);
+   my_printf("ISFR = 0x%04" PRIX32 ", ", isfr);
+   my_printf("SMR = 0x%04" PRIX32 "\r\n", smr);
+   my_printf("  SECR = 0x%04" PRIX32 ", ", secr);
+   my_printf("SCSIR = 0x%04" PRIX32 ", ", scsir);
+   my_printf("SYSCFG_PMCSETR = 0x%04" PRIX32 "\r\n", SYSCFG->PMCSETR);
 }
 
 static uint16_t build_test_frame(uint8_t *buf)
@@ -354,17 +365,15 @@ static uint16_t build_test_frame(uint8_t *buf)
    i += sizeof(dst);
 
    // Source MAC: our MAC
-   const uint8_t src[6] = {
-      ETH_MAC_ADDR0, ETH_MAC_ADDR1, ETH_MAC_ADDR2,
-      ETH_MAC_ADDR3, ETH_MAC_ADDR4, ETH_MAC_ADDR5
-   };
+   const uint8_t src[6] = {ETH_MAC_ADDR0, ETH_MAC_ADDR1, ETH_MAC_ADDR2,
+                           ETH_MAC_ADDR3, ETH_MAC_ADDR4, ETH_MAC_ADDR5};
    memcpy(&buf[i], src, sizeof(src));
    i += sizeof(src);
 
    // Ethertype
    const uint16_t ethertype = 0x88B5;
-   buf[i++] = (uint8_t)(ethertype >> 8);
-   buf[i++] = (uint8_t)(ethertype & 0xFF);
+   buf[i++]                 = (uint8_t)(ethertype >> 8U);
+   buf[i++]                 = (uint8_t)(ethertype & 0xFFU);
 
    // Payload
    const char msg[] = "STM32MP135 RAW ETH TEST";

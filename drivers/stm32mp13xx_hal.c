@@ -662,7 +662,7 @@ void HAL_SYSCFG_DisableVREFBUF(void)
 void HAL_SYSCFG_ETHInterfaceSelect(uint32_t SYSCFG_ETHInterface)
 {
    // JK edit 01/20/2026: this assert disallows setting HAL_ETH1_REF_CLK_RCC
-   //assert_param(IS_SYSCFG_ETHERNET_CONFIG(SYSCFG_ETHInterface));
+   // assert_param(IS_SYSCFG_ETHERNET_CONFIG(SYSCFG_ETHInterface));
 
    SYSCFG->PMCSETR = (uint32_t)(SYSCFG_ETHInterface);
 }
