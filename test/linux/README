@@ -1,0 +1,19 @@
+The config and patches here can be used to make a "non-secure" version of
+STMicroelectronics Linux. First obtain the kernel and check out the version
+shown below:
+
+    git clone git@github.com:STMicroelectronics/linux.git
+    git checkout v6.1-stm32mp-r1.1
+
+Apply the patches:
+
+    for p in patches/*.patch; do \
+    	if git -C linux apply --check ../$$p; then \
+    		git -C linux apply ../$$p; \
+    	fi \
+    done
+
+Copy the provided config file and build the kernel & DTB:
+
+    cp linux.config linux/.config
+    make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- zImage custom.dtb

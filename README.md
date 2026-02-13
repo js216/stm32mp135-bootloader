@@ -114,7 +114,7 @@ This bootloader takes care of all of these details. Use the bootloader command
 An example Linux distribution that works with this bootloader is provided in
 [this](https://github.com/js216/stm32mp135_test_board) repository. (Make sure
 that the Linux kernel does not do any secure monitor calls, since this
-bootloader is nonsecure only.) See
+bootloader is nonsecure only: use the provided patches under `test/linux`.) See
 [this](https://embd.cc/build-linux-for-stm32mp135-in-under-50-lines-of-makefile)
 blog post for a more in-depth explanation on how to put together a complete
 Linux system that runs on the STM32MP135 evaluation board.

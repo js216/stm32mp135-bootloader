@@ -1,0 +1,282 @@
+diff --git a/arch/arm/boot/dts/stm32mp131.dtsi b/arch/arm/boot/dts/stm32mp131.dtsi
+index fcb137f80..d3f11072e 100644
+--- a/arch/arm/boot/dts/stm32mp131.dtsi
++++ b/arch/arm/boot/dts/stm32mp131.dtsi
+@@ -22,10 +22,6 @@ cpu0: cpu@0 {
+ 			compatible = "arm,cortex-a7";
+ 			device_type = "cpu";
+ 			reg = <0>;
+-			clocks = <&scmi_perf 0>;
+-			clock-names = "cpu";
+-			nvmem-cells = <&part_number_otp>;
+-			nvmem-cell-names = "part_number";
+ 			#cooling-cells = <2>;
+ 		};
+ 	};
+@@ -103,76 +99,6 @@ timer {
+ 		always-on;
+ 	};
+ 
+-	firmware {
+-		optee: optee {
+-			method = "smc";
+-			compatible = "linaro,optee-tz";
+-			interrupt-parent = <&intc>;
+-			interrupts = <GIC_PPI 15 (GIC_CPU_MASK_SIMPLE(1) | IRQ_TYPE_LEVEL_LOW)>;
+-			interrupt-controller;
+-			#interrupt-cells = <1>;
+-		};
+-
+-		scmi: scmi {
+-			compatible = "linaro,scmi-optee";
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			linaro,optee-channel-id = <0>;
+-
+-			scmi_perf: protocol@13 {
+-				reg = <0x13>;
+-				#clock-cells = <1>;
+-			};
+-
+-			scmi_reset: protocol@16 {
+-				reg = <0x16>;
+-				#reset-cells = <1>;
+-			};
+-
+-			scmi_voltd: protocol@17 {
+-				reg = <0x17>;
+-
+-				scmi_regu: regulators {
+-					#address-cells = <1>;
+-					#size-cells = <0>;
+-
+-					scmi_reg11: voltd-reg11 {
+-						reg = <VOLTD_SCMI_REG11>;
+-						regulator-name = "reg11";
+-					};
+-					scmi_reg18: voltd-reg18 {
+-						reg = <VOLTD_SCMI_REG18>;
+-						regulator-name = "reg18";
+-					};
+-					scmi_usb33: voltd-usb33 {
+-						reg = <VOLTD_SCMI_USB33>;
+-						regulator-name = "usb33";
+-					};
+-				};
+-			};
+-		};
+-	};
+-
+-	pm_domain {
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-		compatible = "st,stm32mp157c-pd";
+-
+-		pd_core_ret: core-ret-power-domain@1 {
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-			reg = <1>;
+-			#power-domain-cells = <0>;
+-			label = "CORE-RETENTION";
+-
+-			pd_core: core-power-domain@2 {
+-				reg = <2>;
+-				#power-domain-cells = <0>;
+-				label = "CORE";
+-			};
+-		};
+-	};
+-
+ 	thermal-zones {
+ 		cpu_thermal: cpu-thermal {
+ 			polling-delay-passive = <0>;
+@@ -397,7 +323,7 @@ lptimer1: timer@40009000 {
+ 			interrupts-extended = <&exti 47 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&rcc LPTIM1_K>;
+ 			clock-names = "mux";
+-			power-domains = <&pd_core_ret>;
++			//power-domains = <&pd_core_ret>;
+ 			wakeup-source;
+ 			status = "disabled";
+ 
+@@ -494,7 +420,7 @@ usart3: serial@4000f000 {
+ 			clocks = <&rcc USART3_K>;
+ 			resets = <&rcc USART3_R>;
+ 			wakeup-source;
+-			power-domains = <&pd_core_ret>;
++			//power-domains = <&pd_core_ret>;
+ 			dmas = <&dmamux1 45 0x400 0x5>,
+ 			       <&dmamux1 46 0x400 0x1>;
+ 			dma-names = "rx", "tx";
+@@ -508,7 +434,7 @@ uart4: serial@40010000 {
+ 			clocks = <&rcc UART4_K>;
+ 			resets = <&rcc UART4_R>;
+ 			wakeup-source;
+-			power-domains = <&pd_core_ret>;
++			//power-domains = <&pd_core_ret>;
+ 			dmas = <&dmamux1 63 0x400 0x5>,
+ 			       <&dmamux1 64 0x400 0x1>;
+ 			dma-names = "rx", "tx";
+@@ -522,7 +448,7 @@ uart5: serial@40011000 {
+ 			clocks = <&rcc UART5_K>;
+ 			resets = <&rcc UART5_R>;
+ 			wakeup-source;
+-			power-domains = <&pd_core_ret>;
++			//power-domains = <&pd_core_ret>;
+ 			dmas = <&dmamux1 65 0x400 0x5>,
+ 			       <&dmamux1 66 0x400 0x1>;
+ 			dma-names = "rx", "tx";
+@@ -572,7 +498,7 @@ uart7: serial@40018000 {
+ 			clocks = <&rcc UART7_K>;
+ 			resets = <&rcc UART7_R>;
+ 			wakeup-source;
+-			power-domains = <&pd_core_ret>;
++			//power-domains = <&pd_core_ret>;
+ 			dmas = <&dmamux1 79 0x400 0x5>,
+ 			       <&dmamux1 80 0x400 0x1>;
+ 			dma-names = "rx", "tx";
+@@ -586,7 +512,7 @@ uart8: serial@40019000 {
+ 			clocks = <&rcc UART8_K>;
+ 			resets = <&rcc UART8_R>;
+ 			wakeup-source;
+-			power-domains = <&pd_core_ret>;
++			//power-domains = <&pd_core_ret>;
+ 			dmas = <&dmamux1 81 0x400 0x5>,
+ 			       <&dmamux1 82 0x400 0x1>;
+ 			dma-names = "rx", "tx";
+@@ -682,7 +608,7 @@ usart6: serial@44003000 {
+ 			clocks = <&rcc USART6_K>;
+ 			resets = <&rcc USART6_R>;
+ 			wakeup-source;
+-			power-domains = <&pd_core_ret>;
++			//power-domains = <&pd_core_ret>;
+ 			dmas = <&dmamux1 71 0x400 0x5>,
+ 			       <&dmamux1 72 0x400 0x1>;
+ 			dma-names = "rx", "tx";
+@@ -935,7 +861,7 @@ lptimer4: timer@50023000 {
+ 			interrupts-extended = <&exti 52 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&rcc LPTIM4_K>;
+ 			clock-names = "mux";
+-			power-domains = <&pd_core_ret>;
++			//power-domains = <&pd_core_ret>;
+ 			wakeup-source;
+ 			status = "disabled";
+ 
+@@ -957,7 +883,7 @@ lptimer5: timer@50024000 {
+ 			interrupts-extended = <&exti 53 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&rcc LPTIM5_K>;
+ 			clock-names = "mux";
+-			power-domains = <&pd_core_ret>;
++			//power-domains = <&pd_core_ret>;
+ 			wakeup-source;
+ 			status = "disabled";
+ 
+@@ -1014,7 +940,7 @@ usbh_ohci: usb@5800c000 {
+ 			clocks = <&usbphyc>, <&rcc USBH>;
+ 			resets = <&rcc USBH_R>;
+ 			interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
+-			power-domains = <&pd_core>;
++			//power-domains = <&pd_core>;
+ 			wakeup-source;
+ 			status = "disabled";
+ 		};
+@@ -1026,7 +952,7 @@ usbh_ehci: usb@5800d000 {
+ 			resets = <&rcc USBH_R>;
+ 			interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL_HIGH>;
+ 			companion = <&usbh_ohci>;
+-			power-domains = <&pd_core>;
++			//power-domains = <&pd_core>;
+ 			wakeup-source;
+ 			status = "disabled";
+ 		};
+@@ -1116,8 +1042,6 @@ adc2: adc@0 {
+ 					interrupts = <0>;
+ 					dmas = <&dmamux1 10 0x400 0x80000001>;
+ 					dma-names = "rx";
+-					nvmem-cells = <&vrefint>;
+-					nvmem-cell-names = "vrefint";
+ 					status = "disabled";
+ 
+ 					channel@13 {
+@@ -1152,8 +1076,8 @@ usbotg_hs: usb@49000000 {
+ 				g-tx-fifo-size = <256 16 16 16 16 16 16 16>;
+ 				dr_mode = "otg";
+ 				otg-rev = <0x200>;
+-				usb33d-supply = <&scmi_usb33>;
+-				power-domains = <&pd_core>;
++				//usb33d-supply = <&scmi_usb33>;
++				//power-domains = <&pd_core>;
+ 				wakeup-source;
+ 				feature-domains = <&etzpc STM32MP1_ETZPC_OTG_ID>;
+ 				status = "disabled";
+@@ -1166,7 +1090,7 @@ usart1: serial@4c000000 {
+ 				clocks = <&rcc USART1_K>;
+ 				resets = <&rcc USART1_R>;
+ 				wakeup-source;
+-				power-domains = <&pd_core_ret>;
++				//power-domains = <&pd_core_ret>;
+ 				dmas = <&dmamux1 41 0x400 0x5>,
+ 				       <&dmamux1 42 0x400 0x1>;
+ 				dma-names = "rx", "tx";
+@@ -1181,7 +1105,7 @@ usart2: serial@4c001000 {
+ 				clocks = <&rcc USART2_K>;
+ 				resets = <&rcc USART2_R>;
+ 				wakeup-source;
+-				power-domains = <&pd_core_ret>;
++				//power-domains = <&pd_core_ret>;
+ 				dmas = <&dmamux1 43 0x400 0x5>,
+ 				       <&dmamux1 44 0x400 0x1>;
+ 				dma-names = "rx", "tx";
+@@ -1457,7 +1381,7 @@ lptimer2: timer@50021000 {
+ 				interrupts-extended = <&exti 48 IRQ_TYPE_LEVEL_HIGH>;
+ 				clocks = <&rcc LPTIM2_K>;
+ 				clock-names = "mux";
+-				power-domains = <&pd_core_ret>;
++				//power-domains = <&pd_core_ret>;
+ 				wakeup-source;
+ 				feature-domains = <&etzpc STM32MP1_ETZPC_LPTIM2_ID>;
+ 				status = "disabled";
+@@ -1493,7 +1417,7 @@ lptimer3: timer@50022000 {
+ 				interrupts-extended = <&exti 50 IRQ_TYPE_LEVEL_HIGH>;
+ 				clocks = <&rcc LPTIM3_K>;
+ 				clock-names = "mux";
+-				power-domains = <&pd_core_ret>;
++				//power-domains = <&pd_core_ret>;
+ 				wakeup-source;
+ 				feature-domains = <&etzpc STM32MP1_ETZPC_LPTIM3_ID>;
+ 				status = "disabled";
+@@ -1657,8 +1581,8 @@ usbphyc: usbphyc@5a006000 {
+ 				reg = <0x5a006000 0x1000>;
+ 				clocks = <&rcc USBPHY_K>;
+ 				resets = <&rcc USBPHY_R>;
+-				vdda1v1-supply = <&scmi_reg11>;
+-				vdda1v8-supply = <&scmi_reg18>;
++				//vdda1v1-supply = <&scmi_reg11>;
++				//vdda1v8-supply = <&scmi_reg18>;
+ 				feature-domains = <&etzpc STM32MP1_ETZPC_USBPHYCTRL_ID>;
+ 				status = "disabled";
+ 
+diff --git a/arch/arm/boot/dts/stm32mp135.dtsi b/arch/arm/boot/dts/stm32mp135.dtsi
+index c3d4b3198..0f872df8c 100644
+--- a/arch/arm/boot/dts/stm32mp135.dtsi
++++ b/arch/arm/boot/dts/stm32mp135.dtsi
+@@ -27,7 +27,6 @@ ltdc: display-controller@5a001000 {
+ 					     <GIC_SPI 89 IRQ_TYPE_LEVEL_HIGH>;
+ 				clocks = <&rcc LTDC_PX>;
+ 				clock-names = "lcd";
+-				resets = <&scmi_reset RST_SCMI_LTDC>;
+ 				feature-domains = <&etzpc STM32MP1_ETZPC_LTDC_ID>;
+ 				status = "disabled";
+ 			};
+diff --git a/arch/arm/mach-stm32/Kconfig b/arch/arm/mach-stm32/Kconfig
+index 981450315..2479ec486 100644
+--- a/arch/arm/mach-stm32/Kconfig
++++ b/arch/arm/mach-stm32/Kconfig
+@@ -5,7 +5,6 @@ menuconfig ARCH_STM32
+ 	select ARMV7M_SYSTICK if ARM_SINGLE_ARMV7M
+ 	select HAVE_ARM_ARCH_TIMER if ARCH_MULTI_V7
+ 	select ARM_GIC if ARCH_MULTI_V7
+-	select ARM_PSCI if ARCH_MULTI_V7
+ 	select ARM_AMBA
+ 	select ARCH_HAS_RESET_CONTROLLER
+ 	select CLKSRC_STM32
