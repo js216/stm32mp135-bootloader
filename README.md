@@ -15,6 +15,7 @@ Features include:
 - Write to SD card from USB via Mass Storage Class, like a flash drive
 - Load any other program from SD card to DDR and execute it
 - Set image or solid color on LCD display; control backlight; read touch (CTP)
+- Send Ethernet frame and check on PHY & link status
 - Command line with tab completion and "up arrow" history
 - Super simple, hackable code: <3k lines of code plus [ST
   HAL](https://wiki.st.com/stm32mpu/wiki/STM32CubeMP13_Package_-_Getting_started)
