@@ -22,7 +22,7 @@ MEMORY {
       SRAM3_BASE (rwx)    : ORIGIN = 0x30006000, LENGTH = 8K
       /* InternalMEM = SYSRAM + SRAM1 + SRAM2 + SRAM3 */
       InternalMEM (rwx)   : ORIGIN = 0x2FFE0000, LENGTH = 160K
-      DDR_BASE (rwx)      : ORIGIN = 0xC0008000, LENGTH = 512M
+      DDR_BASE (rwx)      : ORIGIN = 0xC2000000, LENGTH = 512M
 }
 
 /* Select Memory in which code has to be placed and offset of code from start of this memory */ 

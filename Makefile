@@ -27,7 +27,7 @@ LFLAGS = \
 # Build recipes
 
 build/sdcard.img: build/main.stm32 build/blink.bin
-	python3 scripts/sdimage.py $@ $^
+	python3 scripts/sdimage.py $@ $< --partition build/blink.bin
 
 build/main.elf: $(OBJ) build/src/handoff.o
 	arm-none-eabi-gcc $(LFLAGS) -T src/sysram.ld -o $@ $^

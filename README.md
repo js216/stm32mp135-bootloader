@@ -49,12 +49,8 @@ Features include:
 
        File                      LBA      Size       Blocks
        -------------------------------------------------------
-       main.stm32                128      116736     228
-       blink.bin                 640      12800      25
-
-   Make note of the `LBA` address of the `blink.bin` program (640), and the
-   number of blocks (25). You'll use these with the `load_sd` command in the
-   next section.
+       main.stm32                128      124928     244
+       blink.bin                 372      12800      25
 
 2. The initial boot can be done with USB-C with DIP switch set to `BOOT = 000`
    (see below for [initial boot
@@ -76,20 +72,22 @@ it from [here](http://www.chrysocome.net/dd)) to write the SD card image:
 ⚠ WARNING: This will erase all data on the target device, so double-check that
 it is the newly-enumerated SD card and contains no important files.
 
-After writing the SD card, open the serial console (115200 baud) and load a
-program into DDR using the `load_sd` command, then execute it with `jump`:
+After writing the SD card, open the serial console (115200 baud) and load the
+blink program into DDR using the `two` command, then execute it with `jump`:
 
-    > load_sd 25 640 0xc0008000
-    > jump 0xc0008000
+    > two
+    > jump
 
 This runs the blink program: it just blinks the red led, and prints a message to
-UART4. Success! (Note that `0xc0008000` is the hardcoded program start location,
-which can be changed in the linker script `test/blink.ld`.)
+UART4. Success! (The `two` commands loads the first partition to 0xC2000000 and
+the second to 0xC4000000.)
 
 To run other programs, generate an SD card image containing the bootloader and
 the program. For example, the blink SD image was created with:
 
-    python3 scripts/sdimage.py build/sdcard.img build/main.stm32 build/blink.bin
+    python3 scripts/sdimage.py build/sdcard.img \
+       build/main.stm32 \
+       --partition build/blink.bin
 
 The script prints a table of where each program is installed on the SD card. Use
 the shown block number and size with `load_sd` and `jump` to load and run any
@@ -109,7 +107,7 @@ satisfied:
 - Init program provided, e.g. from a simple filesystem
 
 This bootloader takes care of all of these details. Use the bootloader command
-`two` to load both the kernel and DTB into RAM and jump to it.
+`two` to load both the kernel and DTB into RAM, and `jump` to execute it.
 
 An example Linux distribution that works with this bootloader is provided in
 [this](https://github.com/js216/stm32mp135_test_board) repository. (Make sure

@@ -119,13 +119,13 @@ static const struct cmd cmd_list[] = {
     {
      .name    = "two",
      .syntax  = "",
-     .summary = "Load Linux image and DTB from SD card and jump to it",
+     .summary = "Load DTB and kernel from SD card",
      .defaults =
             (const struct cmd_defaults[]){
                 {"linux", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
                 {"dtb", DEF_DTB_LEN, DEF_DTB_BLK, DEF_DTB_ADDR},
             },       .num_defaults = 2,
-     .handler      = cmd_load_two,
+     .handler      = sd_load_mbr,
      },
 
     {
@@ -180,6 +180,15 @@ static const struct cmd cmd_list[] = {
      .defaults     = NULL,
      .num_defaults = 0,
      .handler      = eth_send_test_frame,
+     },
+
+    {
+     .name         = "mbr_load",
+     .syntax       = "",
+     .summary      = "Load MBR partitions",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = sd_print_mbr,
      },
 };
 
@@ -554,17 +563,6 @@ void cmd_load_one(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg3;
    sd_read(DEF_EXE_BLK, DEF_EXE_LEN, DEF_EXE_ADDR);
    boot_jump(1, DEF_EXE_ADDR, 0, 0);
-}
-
-void cmd_load_two(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
-{
-   (void)argc;
-   (void)arg1;
-   (void)arg2;
-   (void)arg3;
-   sd_read(DEF_LINUX_BLK, DEF_LINUX_LEN, DEF_LINUX_ADDR);
-   sd_read(DEF_DTB_BLK, DEF_DTB_LEN, DEF_DTB_ADDR);
-   boot_jump(1, DEF_LINUX_ADDR, 0, 0);
 }
 
 // end file cmd.c

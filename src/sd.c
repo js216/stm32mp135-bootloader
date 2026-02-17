@@ -28,6 +28,13 @@
 #define BLOCK_SIZE 512U
 #define DDR_SIZE   0x20000000U // 512 MB
 
+struct mbr_partition {
+   uint8_t boot_flag;
+   uint8_t type;
+   uint32_t lba_start;
+   uint32_t num_sectors;
+};
+
 // global variables
 SD_HandleTypeDef sd_handle;
 
@@ -130,6 +137,72 @@ void sd_read(uint32_t lba, uint32_t num_blocks, uint32_t dest_addr)
       ; // wait
 
    __enable_irq();
+}
+
+static void parse_mbr_entry(uint8_t *buffer, struct mbr_partition *p)
+{
+   p->boot_flag = buffer[0];
+   p->type      = buffer[4];
+   // Cast to uint32_t pointer to read 4 bytes at once
+   // Note: This assumes your CPU supports unaligned access (common on ARM/x86)
+   p->lba_start   = *(uint32_t *)&buffer[8];
+   p->num_sectors = *(uint32_t *)&buffer[12];
+}
+
+static int get_mbr_table(struct mbr_partition *table)
+{
+   uint8_t *sector = (uint8_t *)DRAM_MEM_BASE;
+   sd_read(0, 1, DRAM_MEM_BASE);
+
+   if (sector[510] != 0x55 || sector[511] != 0xAA) {
+      my_printf("No valid MBR signature!\r\n");
+      return 0;
+   }
+
+   for (int i = 0; i < 4; i++) {
+      parse_mbr_entry(&sector[446 + (i * 16)], &table[i]);
+   }
+   return 1;
+}
+
+void sd_print_mbr(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+
+   struct mbr_partition table[4];
+   if (!get_mbr_table(table))
+      return;
+
+   my_printf("\r\nIdx  Boot  Type   Start LBA   Blocks\r\n");
+   for (int i = 0; i < 4; i++) {
+      my_printf("%-4d %-5s 0x%02X   %-11" PRIu32 " %-8" PRIu32 "\r\n", i + 1,
+                (table[i].boot_flag == 0x80) ? "Yes" : "No", table[i].type,
+                table[i].lba_start, table[i].num_sectors);
+   }
+}
+
+void sd_load_mbr(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+
+   struct mbr_partition table[4];
+
+   if (!get_mbr_table(table)) {
+      my_printf("No MBR found: nothing to copy.");
+      return;
+   }
+
+   if (table[0].type != 0)
+      sd_read(table[0].lba_start, table[0].num_sectors, DEF_LINUX_ADDR);
+
+   if (table[1].type != 0)
+      sd_read(table[1].lba_start, table[1].num_sectors, DEF_DTB_ADDR);
 }
 
 void load_sd_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
