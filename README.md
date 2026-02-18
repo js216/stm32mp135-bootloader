@@ -119,16 +119,27 @@ Linux system that runs on the STM32MP135 evaluation board.
 
 ### Configuration Flags
 
-Several flags control the build process, depending on what features are desired
-in the final executable. Pass them to make via the `CFLAGS_EXTRA=-D<flag>`
-mechanism as shown above. The `<flag>` can be one of:
+To customize the behavior of the bootloader for a new board or application,
+consult [`src/board.h`](src/board.h). The whole header is essentially a giant
+if/else, defining the behavior on these boards:
 
-- `EVB`: Define this to run bootloader on eval board. This enables STPMIC1
-  support and sets appropriate LCD display parameters.
+- `EVB`: [STM32PM135F eval
+  board](https://www.st.com/en/evaluation-tools/stm32mp135f-dk.html); enables
+  STPMIC1 support and sets appropriate LCD display parameters.
+
+- [Custom board](https://github.com/js216/stm32mp135_test_board)
+
+Enable the eval board by passing `CFLAGS_EXTRA=-DEVB`, otherwise the bootloader
+will be built for the custom board. If adding support for a new board, add it to
+list above and into `board.h` as another else statement.
+
+The `board.h` header is used for board-specific features like pinouts, as well
+as to enable/disable application specific functionality as desired:
+
+- `AUTOBOOT` disables the command line and directly boots from MBR partitions
 
 Other features can be disabled just by removing them from the `main()` function:
 
-- Remove command line support by removing `cmd_init()` and `cmd_poll()`.
 - Remove the blinking by removing `blink()`.
 - Remove USB support by removing `usb_init()`.
 - Remove SD card support by removing `sd_init()`.

@@ -7,8 +7,11 @@
  * @copyright 2025 Stanford Research Systems, Inc.
  */
 
+#include "board.h"
+#include "boot.h"
 #include "cmd.h"
 #include "ddr.h"
+#include "defaults.h"
 #include "eth.h"
 #include "lcd.h"
 #include "sd.h"
@@ -44,12 +47,20 @@ int main(void)
    usb_init();
    lcd_init();
    eth_init();
-   cmd_init();
+   blink();
 
+#ifdef AUTOBOOT
+   sd_load_mbr(0, 0, 0, 0);
+   boot_jump(1, DEF_LINUX_ADDR, 0, 0);
+#else
+   cmd_init();
    while (1) {
       cmd_poll();
       blink();
    }
+#endif
+
+   return 0;
 }
 
 // end file main.c

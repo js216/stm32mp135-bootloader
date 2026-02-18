@@ -12,6 +12,8 @@
 
 #ifdef EVB // STM32MP135F-DK: Discovery kit with STM32MP135F MPU
 
+#undef AUTOBOOT
+
 #define USE_STPMIC1x 1
 #define USE_MCP23x17 1
 
@@ -134,6 +136,8 @@
 #define ETH_NRST_PIN    MCP_PIN_9
 
 #else
+
+#define AUTOBOOT
 
 #define USE_STPMIC1x 0
 #define USE_MCP23x17 0
