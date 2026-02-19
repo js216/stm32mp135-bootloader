@@ -7,6 +7,7 @@
  * @copyright 2025 Stanford Research Systems, Inc.
  */
 
+#include "board.h"
 #include "cmd.h"
 #include "ddr.h"
 #include "eth.h"
@@ -19,7 +20,6 @@
 #include <stdint.h>
 
 #ifdef AUTOBOOT
-#include "board.h"
 #include "boot.h"
 #include "defaults.h"
 #endif
