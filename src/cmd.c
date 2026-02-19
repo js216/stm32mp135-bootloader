@@ -24,6 +24,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef REG_PRINTOUT
+#include "reg.h"
+#endif
+
 #define RXBUF_SIZE   64
 #define CMD_MAX_LEN  32
 #define HISTORY_SIZE 8
@@ -190,6 +194,17 @@ static const struct cmd cmd_list[] = {
      .num_defaults = 0,
      .handler      = sd_print_mbr,
      },
+
+#ifdef REG_PRINTOUT
+    {
+     .name         = "dump_reg",
+     .syntax       = "",
+     .summary      = "Printout register values",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = reg_dump,
+     },
+#endif
 };
 
 // character ring buffer

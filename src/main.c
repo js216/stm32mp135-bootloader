@@ -7,11 +7,8 @@
  * @copyright 2025 Stanford Research Systems, Inc.
  */
 
-#include "board.h"
-#include "boot.h"
 #include "cmd.h"
 #include "ddr.h"
-#include "defaults.h"
 #include "eth.h"
 #include "lcd.h"
 #include "sd.h"
@@ -20,6 +17,12 @@
 #include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_gpio.h"
 #include <stdint.h>
+
+#ifdef AUTOBOOT
+#include "board.h"
+#include "boot.h"
+#include "defaults.h"
+#endif
 
 static void blink(void)
 {
