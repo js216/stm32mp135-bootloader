@@ -136,7 +136,8 @@ list above and into `board.h` as another else statement.
 The `board.h` header is used for board-specific features like pinouts, as well
 as to enable/disable application specific functionality as desired:
 
-- `AUTOBOOT` disables the command line and directly boots from MBR partitions
+- `AUTOBOOT` directly boots from MBR partitions and disables the command line
+  and USB support
 
 Other features can be disabled just by removing them from the `main()` function:
 

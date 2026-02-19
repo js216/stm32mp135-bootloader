@@ -44,7 +44,6 @@ int main(void)
    ddr_init();
    mmu_init();
    sd_init();
-   usb_init();
    lcd_init();
    eth_init();
    blink();
@@ -53,6 +52,7 @@ int main(void)
    sd_load_mbr(0, 0, 0, 0);
    boot_jump(1, DEF_LINUX_ADDR, 0, 0);
 #else
+   usb_init();
    cmd_init();
    while (1) {
       cmd_poll();
