@@ -108,11 +108,11 @@ void sysclk_init(void)
    rcc_oscinitstructure.PLL.PLLState  = RCC_PLL_ON;
    rcc_oscinitstructure.PLL.PLLSource = RCC_PLL12SOURCE_HSE;
    rcc_oscinitstructure.PLL.PLLM      = 3;
-   rcc_oscinitstructure.PLL.PLLN      = 81;
+   rcc_oscinitstructure.PLL.PLLN      = 83;
    rcc_oscinitstructure.PLL.PLLP      = 1;
    rcc_oscinitstructure.PLL.PLLQ      = 2;
    rcc_oscinitstructure.PLL.PLLR      = 2;
-   rcc_oscinitstructure.PLL.PLLFRACV  = 0x800;
+   rcc_oscinitstructure.PLL.PLLFRACV  = 0xaaa;
    rcc_oscinitstructure.PLL.PLLMODE   = RCC_PLL_FRACTIONAL;
 
    rcc_oscinitstructure.PLL2.PLLState  = RCC_PLL_ON;

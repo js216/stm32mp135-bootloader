@@ -89,5 +89,11 @@ handoff_jump:
    orr r0, r0, #(3 << 10)    // Set bits 10 and 11
    mcr p15, 0, r0, c1, c1, 2 // write NSACR
 
+   // Program CNTFRQ_EL0 to match STGEN
+   ldr r0, =24000000          // STGEN frequency in Hz
+   mcr p15, 0, r0, c14, c0, 0 // write CNTFRQ_EL0
+   dsb                        // ensure write completes
+   isb                        // synchronize subsequent instructions
+
    // Call the Secure Monitor handler
    smc #0
