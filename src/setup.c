@@ -17,6 +17,7 @@
 #include "printf.h"
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx.h"
+#include "stm32mp13xx_disco_stpmic1.h"
 #include "stm32mp13xx_hal_def.h"
 #include "stm32mp13xx_hal_gpio.h"
 #include "stm32mp13xx_hal_gpio_ex.h"
@@ -31,10 +32,6 @@
 #include "usbd_msc.h"
 #include "usbd_msc_storage.h"
 #include <stdint.h>
-
-#if (USE_STPMIC1x == 1)
-#include "stm32mp13xx_disco_stpmic1.h"
-#endif
 
 // global variables
 UART_HandleTypeDef huart4;
@@ -201,8 +198,9 @@ To do this please uncomment the following code
 
 void pmic_init(void)
 {
-#if (USE_STPMIC1x == 1)
-   BSP_PMIC_Init();
+   if (BSP_PMIC_Init())
+      return;
+
    BSP_PMIC_InitRegulators();
 
    STPMU1_Regulator_Voltage_Set(STPMU1_BUCK2, 1350);
@@ -210,7 +208,6 @@ void pmic_init(void)
    HAL_Delay(1);
    STPMU1_Regulator_Enable(STPMU1_VREFDDR);
    HAL_Delay(1);
-#endif
 }
 
 void perclk_init(void)

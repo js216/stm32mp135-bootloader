@@ -121,11 +121,10 @@ Linux system that runs on the STM32MP135 evaluation board.
 
 To customize the behavior of the bootloader for a new board or application,
 consult [`src/board.h`](src/board.h). The whole header is essentially a giant
-if/else, defining the behavior on these boards:
+if/else, defining the pin configurations of these boards:
 
 - `EVB`: [STM32PM135F eval
-  board](https://www.st.com/en/evaluation-tools/stm32mp135f-dk.html); enables
-  STPMIC1 support and sets appropriate LCD display parameters.
+  board](https://www.st.com/en/evaluation-tools/stm32mp135f-dk.html)
 
 - [Custom board](https://github.com/js216/stm32mp135_test_board)
 

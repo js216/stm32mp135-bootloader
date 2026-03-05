@@ -15,7 +15,6 @@
 #undef AUTOBOOT
 #undef REG_PRINTOUT
 
-#define USE_STPMIC1x 1
 #define USE_MCP23x17 1
 
 #define CTP_INT_PORT    GPIOF
@@ -141,7 +140,6 @@
 #define AUTOBOOT
 #undef REG_PRINTOUT
 
-#define USE_STPMIC1x 0
 #define USE_MCP23x17 0
 
 #define CTP_INT_PORT    GPIOH

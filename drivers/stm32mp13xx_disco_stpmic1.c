@@ -40,7 +40,6 @@
  */
 /* Driver for PMIC
  * ---------------------------------------------------------------*/
-#if (USE_STPMIC1x == 1)
 #define NAME_LENGHT 15U
 
 /* Board Configuration
@@ -1236,7 +1235,6 @@ void EXTI8_IRQHandler(void)
 
    STPMU1_IrqHandler();
 }
-#endif
 
 /**
  * @}

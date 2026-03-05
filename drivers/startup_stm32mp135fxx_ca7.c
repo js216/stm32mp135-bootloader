@@ -443,11 +443,9 @@ static void EXTI7_IRQHandler(void)
 {
 }
 
-#if (USE_STPMIC1x != 1)
 void EXTI8_IRQHandler(void)
 {
 }
-#endif
 
 static void EXTI9_IRQHandler(void)
 {
