@@ -137,8 +137,8 @@ as to enable/disable application specific functionality as desired:
 
 - `AUTOBOOT` directly boots from MBR partitions and disables the command line
   and USB support
-- `REG_PRINTOUT` prints out the register values for `RCC` and all `TIMx`,
-  `GPIOx` blocks
+- `REG_PRINTOUT` defines a command to print out the register values for `RCC`
+  and all `TIMx`, `GPIOx` blocks
 
 Other features can be disabled just by removing them from the `main()` function:
 

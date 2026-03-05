@@ -12,7 +12,6 @@
 
 #ifdef EVB // STM32MP135F-DK: Discovery kit with STM32MP135F MPU
 
-#undef AUTOBOOT
 #undef REG_PRINTOUT
 
 #define USE_MCP23x17 1
@@ -137,7 +136,6 @@
 
 #else
 
-#define AUTOBOOT
 #undef REG_PRINTOUT
 
 #define USE_MCP23x17 0
