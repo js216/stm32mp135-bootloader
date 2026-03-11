@@ -132,11 +132,11 @@ Enable the eval board by passing `CFLAGS_EXTRA=-DEVB`, otherwise the bootloader
 will be built for the custom board. If adding support for a new board, add it to
 list above and into `board.h` as another else statement.
 
-The `board.h` header is used for board-specific features like pinouts, as well
-as to enable/disable application specific functionality as desired:
+To enable/disable application specific functionality as desired, add these flags
+to the build command line:
 
-- `AUTOBOOT` directly boots from MBR partitions and disables the command line
-  and USB support
+- `BOOT_NOPROMPT`, when not defined, asks for any key to be pressed to stop
+  autoboot; when defined, we proceed to autoboot immediately
 - `REG_PRINTOUT` defines a command to print out the register values for `RCC`
   and all `TIMx`, `GPIOx` blocks
 

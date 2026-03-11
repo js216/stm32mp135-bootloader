@@ -19,6 +19,7 @@
 #include "sd.h"
 #include "setup.h"
 #include "stm32mp135fxx_ca7.h"
+#include "stm32mp13xx_hal.h"
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -231,6 +232,7 @@ static char history[HISTORY_SIZE][CMD_MAX_LEN];
 static int history_head  = 0;
 static int history_count = 0;
 static int history_index = -1;
+static int key_pressed   = 0;
 
 static void cmd_prompt(void)
 {
@@ -254,12 +256,34 @@ void cmd_take_char(char byte)
       rx_buf[rx_head] = byte;
       rx_head         = next;
    }
+   key_pressed = 1;
 }
 
 static void line_erase(void)
 {
    my_printf("\x1B[2K\x1B[0G");
    cmd_prompt();
+}
+
+void cmd_autoboot(void)
+{
+#ifndef BOOT_NOPROMPT
+   my_printf("Press any key to stop autoload ");
+   int boot_ticks = 10000000;
+   while (boot_ticks > 0) {
+      if (boot_ticks % 1000000 == 0)
+         my_printf(".");
+      cmd_poll();
+      if (key_pressed) {
+         my_printf("\n");
+         line_erase();
+         return;
+      }
+      boot_ticks--;
+   }
+   sd_load_mbr(0, 0, 0, 0);
+   boot_jump(1, DEF_LINUX_ADDR, 0, 0);
+#endif
 }
 
 static void line_load(const char *src)

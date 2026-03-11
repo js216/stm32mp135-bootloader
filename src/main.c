@@ -8,8 +8,10 @@
  */
 
 #include "board.h"
+#include "boot.h"
 #include "cmd.h"
 #include "ddr.h"
+#include "defaults.h"
 #include "eth.h"
 #include "lcd.h"
 #include "sd.h"
@@ -19,9 +21,8 @@
 #include "stm32mp13xx_hal_gpio.h"
 #include <stdint.h>
 
-#ifdef AUTOBOOT
-#include "boot.h"
-#include "defaults.h"
+#ifndef BOOT_TIMEOUT
+#define BOOT_TIMEOUT 3
 #endif
 
 static void blink(void)
@@ -51,17 +52,14 @@ int main(void)
    eth_init();
    blink();
 
-#ifdef AUTOBOOT
-   sd_load_mbr(0, 0, 0, 0);
-   boot_jump(1, DEF_LINUX_ADDR, 0, 0);
-#else
    usb_init();
    cmd_init();
+   cmd_autoboot();
+
    while (1) {
       cmd_poll();
       blink();
    }
-#endif
 
    return 0;
 }
