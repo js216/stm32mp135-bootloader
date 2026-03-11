@@ -8,6 +8,7 @@
  */
 
 #include "fmc.h"
+#include "board.h"
 #include "irq_ctrl.h"
 #include "printf.h"
 #include "stm32mp135fxx_ca7.h"
@@ -36,6 +37,11 @@ void fmc_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg1;
    (void)arg2;
    (void)arg3;
+
+   if (FMC_ENABLE == 0) {
+      my_printf("FMC_ENABLE=0\r\n");
+      return;
+   }
 
    /* Enable FMC clock */
    __HAL_RCC_FMC_CLK_ENABLE();
@@ -157,8 +163,8 @@ void fmc_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    }
 
    /* Test the NAND ID correctness */
-   if ((pnand_id.Maker_Id != 0x2c) || (pnand_id.Device_Id != 0xd3) ||
-       (pnand_id.Third_Id != 0x90) || (pnand_id.Fourth_Id != 0xa6)) {
+   if ((pnand_id.Maker_Id != FMC_MAKER) || (pnand_id.Device_Id != FMC_DEV) ||
+       (pnand_id.Third_Id != FMC_3RD) || (pnand_id.Fourth_Id != FMC_4TH)) {
       my_printf("Unexpected ID read:\r\n");
       my_printf("maker=0x%x, dev=0x%x, 3rd=0x%x, 4th=0x%x\r\n",
                 pnand_id.Maker_Id, pnand_id.Device_Id, pnand_id.Third_Id,

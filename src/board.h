@@ -134,6 +134,17 @@
 #define ETH_TXD1_AF     GPIO_AF11_ETH
 #define ETH_NRST_PIN    MCP_PIN_9
 
+#define FMC_ENABLE            0
+#define FMC_MAKER             0x00U
+#define FMC_DEV               0x00U
+#define FMC_3RD               0x00U
+#define FMC_4TH               0x00U
+#define FMC_PAGE_SIZE_BYTES   4096U
+#define FMC_OOB_SIZE_BYTES    256U  
+#define FMC_BLOCK_SIZE_PAGES  64U
+#define FMC_PLANE_SIZE_BLOCKS 1024U
+#define FMC_PLANE_NBR         2U
+
 #else
 
 #undef REG_PRINTOUT
@@ -264,6 +275,17 @@
 #define ETH_PHY_INTN_AF   GPIO_AF11_ETH
 #define ETH_NRST_PORT     GPIOG
 #define ETH_NRST_PIN      GPIO_PIN_11
+
+#define FMC_ENABLE            1
+#define FMC_MAKER             0xC2U
+#define FMC_DEV               0xDCU
+#define FMC_3RD               0x90U
+#define FMC_4TH               0xA2U
+#define FMC_PAGE_SIZE_BYTES   4096U
+#define FMC_OOB_SIZE_BYTES    256U  
+#define FMC_BLOCK_SIZE_PAGES  64U
+#define FMC_PLANE_SIZE_BLOCKS 1024U
+#define FMC_PLANE_NBR         2U
 
 #endif
 
