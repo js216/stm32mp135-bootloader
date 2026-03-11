@@ -49,12 +49,13 @@ int main(void)
    mmu_init();
    sd_init();
    lcd_init();
-   eth_init();
    blink();
 
-   usb_init();
    cmd_init();
    cmd_autoboot();
+
+   eth_init();
+   usb_init();
 
    while (1) {
       cmd_poll();
