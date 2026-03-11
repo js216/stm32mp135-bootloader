@@ -17,6 +17,7 @@
 #include "lcd.h"
 #include "printf.h"
 #include "sd.h"
+#include "setup.h"
 #include "stm32mp135fxx_ca7.h"
 #include <inttypes.h>
 #include <stddef.h>
@@ -193,6 +194,15 @@ static const struct cmd cmd_list[] = {
      .defaults     = NULL,
      .num_defaults = 0,
      .handler      = sd_print_mbr,
+     },
+
+    {
+     .name         = "lse_init",
+     .syntax       = "",
+     .summary      = "Setup LSE clock (32.768 kHz)",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = lse_init,
      },
 
 #ifdef REG_PRINTOUT

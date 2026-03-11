@@ -93,7 +93,6 @@ void sysclk_init(void)
 
    rcc_oscinitstructure.HSIState = RCC_HSI_ON;
    rcc_oscinitstructure.HSEState = RCC_HSE_ON;
-   rcc_oscinitstructure.LSEState = RCC_LSE_OFF;
    rcc_oscinitstructure.LSIState = RCC_LSI_ON;
    rcc_oscinitstructure.CSIState = RCC_CSI_ON;
 
@@ -418,6 +417,139 @@ void mmu_init(void)
    L1C_EnableCaches();
 #endif
    L1C_EnableBTAC();
+}
+
+void lse_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+
+   uint32_t tickstart;
+   uint32_t bdcr;
+
+   my_printf("lse_init: starting\r\n");
+
+   /* ------------------------------------------------------------------ */
+   /* 1. Enable PWR clock and unlock backup domain                        */
+   /* ------------------------------------------------------------------ */
+   SET_BIT(PWR->CR1, PWR_CR1_DBP);
+
+   tickstart = HAL_GetTick();
+   while (!READ_BIT(PWR->CR1, PWR_CR1_DBP)) {
+      if ((HAL_GetTick() - tickstart) > DBP_TIMEOUT_VALUE) {
+         my_printf("lse_init: ERROR - backup domain unlock timed out\r\n");
+         return;
+      }
+   }
+   my_printf("lse_init: backup domain unlocked\r\n");
+
+   /* ------------------------------------------------------------------ */
+   /* 2. Dump initial BDCR state                                          */
+   /* ------------------------------------------------------------------ */
+   bdcr = RCC->BDCR;
+   my_printf("lse_init: BDCR initial = 0x%08lX\r\n", bdcr);
+   my_printf("lse_init:   LSEON    = %lu\r\n", (bdcr >> 0) & 1);
+   my_printf("lse_init:   LSERDY   = %lu\r\n", (bdcr >> 2) & 1);
+   my_printf("lse_init:   LSEBYP   = %lu\r\n", (bdcr >> 3) & 1);
+   my_printf("lse_init:   LSEDRV   = %lu\r\n", (bdcr >> 4) & 3);
+   my_printf("lse_init:   RTCSRC   = %lu\r\n", (bdcr >> 16) & 3);
+   my_printf("lse_init:   RTCCKEN  = %lu\r\n", (bdcr >> 20) & 1);
+
+   /* ------------------------------------------------------------------ */
+   /* 3. If RTCSRC already set to LSE (01) and LSERDY up, nothing to do   */
+   /* ------------------------------------------------------------------ */
+   if (((bdcr >> 16) & 3) == 1 && READ_BIT(bdcr, RCC_BDCR_LSERDY)) {
+      my_printf(
+          "lse_init: LSE already running and selected, ensuring gate on\r\n");
+      SET_BIT(RCC->BDCR, RCC_BDCR_RTCCKEN);
+      my_printf("lse_init: done (was already configured)\r\n");
+      return;
+   }
+
+   /* ------------------------------------------------------------------ */
+   /* 4. If RTCSRC is non-zero but not LSE, we must reset backup domain   */
+   /*    to change it — this wipes RTC registers, warn loudly             */
+   /* ------------------------------------------------------------------ */
+   if (((bdcr >> 16) & 3) != 0 && ((bdcr >> 16) & 3) != 1) {
+      my_printf("lse_init: WARNING - RTCSRC = %lu (not LSE), resetting backup "
+                "domain\r\n",
+                (bdcr >> 16) & 3);
+      my_printf("lse_init: WARNING - RTC registers will be lost!\r\n");
+
+      SET_BIT(RCC->BDCR, RCC_BDCR_VSWRST);
+      tickstart = HAL_GetTick();
+      while (!READ_BIT(RCC->BDCR, RCC_BDCR_VSWRST)) {
+         if ((HAL_GetTick() - tickstart) > 10) {
+            my_printf("lse_init: ERROR - backup domain reset failed\r\n");
+            return;
+         }
+      }
+      CLEAR_BIT(RCC->BDCR, RCC_BDCR_VSWRST);
+      my_printf("lse_init: backup domain reset done, BDCR = 0x%08lX\r\n",
+                RCC->BDCR);
+   }
+
+   /* ------------------------------------------------------------------ */
+   /* 5. Set LSE drive strength before enabling (medium-high is safe      */
+   /*    default; tune down later if power matters)                       */
+   /* ------------------------------------------------------------------ */
+   MODIFY_REG(RCC->BDCR, RCC_BDCR_LSEDRV, (2U << RCC_BDCR_LSEDRV_Pos));
+   my_printf("lse_init: LSEDRV set to medium-high (2)\r\n");
+
+   /* ------------------------------------------------------------------ */
+   /* 6. Start LSE                                                        */
+   /* ------------------------------------------------------------------ */
+   SET_BIT(RCC->BDCR, RCC_BDCR_LSEON);
+   my_printf("lse_init: LSEON set, waiting for LSERDY...\r\n");
+
+   tickstart = HAL_GetTick();
+   while (!READ_BIT(RCC->BDCR, RCC_BDCR_LSERDY)) {
+      if ((HAL_GetTick() - tickstart) > LSE_TIMEOUT_VALUE) {
+         my_printf("lse_init: ERROR - LSE failed to start after %lu ms\r\n",
+                   HAL_GetTick() - tickstart);
+         my_printf("lse_init: BDCR at timeout = 0x%08lX\r\n", RCC->BDCR);
+         my_printf("lse_init: check crystal, load caps, PCB layout\r\n");
+         return;
+      }
+   }
+   my_printf("lse_init: LSERDY after %lu ms\r\n", HAL_GetTick() - tickstart);
+
+   /* ------------------------------------------------------------------ */
+   /* 7. Select LSE as RTC clock source (write-once, so guard it)        */
+   /* ------------------------------------------------------------------ */
+   if (READ_BIT(RCC->BDCR, RCC_BDCR_RTCSRC) == 0) {
+      MODIFY_REG(RCC->BDCR, RCC_BDCR_RTCSRC, (1U << RCC_BDCR_RTCSRC_Pos));
+      my_printf("lse_init: RTCSRC set to LSE (01)\r\n");
+   } else {
+      my_printf("lse_init: RTCSRC already = %lu, leaving alone\r\n",
+                (RCC->BDCR >> 16) & 3);
+   }
+
+   /* ------------------------------------------------------------------ */
+   /* 8. Enable RTC clock gate                                            */
+   /* ------------------------------------------------------------------ */
+   SET_BIT(RCC->BDCR, RCC_BDCR_RTCCKEN);
+   my_printf("lse_init: RTCCKEN set\r\n");
+
+   /* ------------------------------------------------------------------ */
+   /* 9. Final state dump                                                 */
+   /* ------------------------------------------------------------------ */
+   bdcr = RCC->BDCR;
+   my_printf("lse_init: BDCR final  = 0x%08lX\r\n", bdcr);
+   my_printf("lse_init:   LSEON    = %lu\r\n", (bdcr >> 0) & 1);
+   my_printf("lse_init:   LSERDY   = %lu\r\n", (bdcr >> 2) & 1);
+   my_printf("lse_init:   LSEDRV   = %lu\r\n", (bdcr >> 4) & 3);
+   my_printf("lse_init:   RTCSRC   = %lu\r\n", (bdcr >> 16) & 3);
+   my_printf("lse_init:   RTCCKEN  = %lu\r\n", (bdcr >> 20) & 1);
+
+   if (((bdcr >> 16) & 3) == 1 && READ_BIT(bdcr, RCC_BDCR_LSERDY) &&
+       READ_BIT(bdcr, RCC_BDCR_RTCCKEN)) {
+      my_printf("lse_init: SUCCESS - penguin should be happy\r\n");
+   } else {
+      my_printf("lse_init: ERROR - something is still wrong, check above\r\n");
+   }
 }
 
 // end file setup.c

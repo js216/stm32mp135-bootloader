@@ -25,6 +25,9 @@ void uart4_init(void);
 void gic_init(void);
 void mmu_init(void);
 void usb_init(void);
+
+void lse_init(int argc, uint32_t r, uint32_t g, uint32_t b);
+
 #endif // SETUP_H
 
 // end file setup.h
