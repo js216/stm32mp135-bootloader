@@ -15,28 +15,14 @@
 
 void fmc_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 
-/**
- * @brief  Read nblocks 512-byte sectors from NAND into buf.
- *         lba and nblocks must be multiples of (PageSize / 512).
- */
-HAL_StatusTypeDef fmc_read_blocks(uint8_t *buf, uint32_t lba,
-                                  uint32_t nblocks);
+/* USB MSC interface.  lba and n are in NAND pages (FMC_PAGE_SIZE_BYTES each). */
+HAL_StatusTypeDef fmc_read_blocks(uint8_t *buf, uint32_t lba, uint32_t n);
+HAL_StatusTypeDef fmc_write_blocks(const uint8_t *buf, uint32_t lba, uint32_t n);
+uint32_t          fmc_block_count(void);  /* returns total pages */
 
-/**
- * @brief  Write nblocks 512-byte sectors from buf to NAND (with ECC).
- *         Target must be pre-erased. lba and nblocks must be multiples
- *         of (PageSize / 512).
- */
-HAL_StatusTypeDef fmc_write_blocks(const uint8_t *buf, uint32_t lba,
-                                   uint32_t nblocks);
-
-/**
- * @brief  Return total NAND capacity in 512-byte logical sectors.
- *         Returns 0 if fmc_init() has not been called successfully.
- */
-uint32_t fmc_block_count(void);
-
-void fmc_erase_all(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
-void fmc_test_boot(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+void fmc_erase_all  (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+void fmc_test_boot  (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+void fmc_test_write (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+void fmc_test_read  (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 
 #endif // FMC_H

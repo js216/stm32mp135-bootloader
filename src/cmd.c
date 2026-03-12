@@ -8,6 +8,7 @@
  */
 
 #include "cmd.h"
+#include "board.h"
 #include "boot.h"
 #include "ddr.h"
 #include "defaults.h"
@@ -81,6 +82,7 @@ static const struct cmd cmd_list[] = {
      .handler      = ddr_print_cmd,
      },
 
+#ifndef NAND_FLASH
     {
      .name    = "load_sd",
      .syntax  = "[length_blocks [sd_block [dest_addr]]]",
@@ -91,6 +93,7 @@ static const struct cmd cmd_list[] = {
             },  .num_defaults = 1,
      .handler      = load_sd_cmd,
      },
+#endif
 
     {
      .name    = "jump",
@@ -123,6 +126,7 @@ static const struct cmd cmd_list[] = {
      .handler      = cmd_load_one,
      },
 
+#ifndef NAND_FLASH
     {
      .name    = "two",
      .syntax  = "",
@@ -134,6 +138,7 @@ static const struct cmd cmd_list[] = {
             },       .num_defaults = 2,
      .handler      = sd_load_mbr,
      },
+#endif
 
     {
      .name         = "align_test",
@@ -180,6 +185,7 @@ static const struct cmd cmd_list[] = {
      .handler      = eth_status,
      },
 
+#ifdef ETHERNET
     {
      .name         = "send_frame",
      .syntax       = "",
@@ -188,7 +194,9 @@ static const struct cmd cmd_list[] = {
      .num_defaults = 0,
      .handler      = eth_send_test_frame,
      },
+#endif
 
+#ifndef NAND_FLASH
     {
      .name         = "mbr_load",
      .syntax       = "",
@@ -197,6 +205,7 @@ static const struct cmd cmd_list[] = {
      .num_defaults = 0,
      .handler      = sd_print_mbr,
      },
+#endif
 
 #ifdef REG_PRINTOUT
     {
@@ -218,6 +227,7 @@ static const struct cmd cmd_list[] = {
      .handler      = lse_init,
      },
 
+#ifdef NAND_FLASH
     {
      .name         = "fmc_erase",
      .syntax       = "",
@@ -235,6 +245,25 @@ static const struct cmd cmd_list[] = {
      .num_defaults = 0,
      .handler      = fmc_test_boot,
      },
+
+    {
+     .name         = "fmc_test_write",
+     .syntax       = "",
+     .summary      = "Write PRBS to NAND flash.",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = fmc_test_write,
+     },
+
+    {
+     .name         = "fmc_test_read",
+     .syntax       = "",
+     .summary      = "Check PRBS on NAND flash.",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = fmc_test_read,
+     },
+#endif
 };
 
 // character ring buffer

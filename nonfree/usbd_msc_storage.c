@@ -15,8 +15,17 @@
 #include "stm32mp13xx_hal_sd.h"
 
 #define STORAGE_LUN_NBR  1U
-#define STORAGE_BLK_NBR  0x100000U  /* fallback: 512 MB in 512-byte blocks */
-#define STORAGE_BLK_SIZ  0x200U     /* 512 bytes */
+
+#ifdef NAND_FLASH
+   /* One logical block = one NAND page.  fmc_block_count() returns total pages.
+    * SCSI block_size is uint16_t (max 65535), so full NAND blocks (256 KB)
+    * cannot be used; page granularity is the natural fit. */
+#  define STORAGE_BLK_SIZ  ((uint16_t)FMC_PAGE_SIZE_BYTES)
+#  define STORAGE_BLK_NBR  (FMC_PLANE_NBR * FMC_PLANE_SIZE_BLOCKS * FMC_BLOCK_SIZE_PAGES)
+#else
+#  define STORAGE_BLK_SIZ  0x200U
+#  define STORAGE_BLK_NBR  0x100000U
+#endif
 
 /* ---------------------------------------------------------------------------
  * Forward declarations
