@@ -133,18 +133,24 @@ will be built for the custom board. If adding support for a new board, add it to
 list above and into `board.h` as another else statement.
 
 To enable/disable application specific functionality as desired, add these flags
-to the build command line:
+to the build command line (or directly to `board.h`):
 
 - `BOOT_NOPROMPT`, when not defined, asks for any key to be pressed to stop
   autoboot; when defined, we proceed to autoboot immediately
 - `REG_PRINTOUT` defines a command to print out the register values for `RCC`
   and all `TIMx`, `GPIOx` blocks
+- `ETHERNET` defines a command to send an Ethernet frame
+- `NAND_FLASH` changes the USB MSC and bootloading code to use NAND flash (SD
+  card is used by default when `NAND_FLASH` not defined)
 
 Other features can be disabled just by removing them from the `main()` function:
 
 - Remove the blinking by removing `blink()`.
 - Remove USB support by removing `usb_init()`.
 - Remove SD card support by removing `sd_init()`.
+
+Note that if too much functionality is enabled at once, it may not all fit into
+SRAM anymore!
 
 ### Initial Boot Alternatives
 

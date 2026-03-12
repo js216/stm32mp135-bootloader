@@ -20,6 +20,7 @@
 #include "setup.h"
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx_hal.h"
+#include "usbd_msc_storage.h"
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -197,15 +198,6 @@ static const struct cmd cmd_list[] = {
      .handler      = sd_print_mbr,
      },
 
-    {
-     .name         = "lse_init",
-     .syntax       = "",
-     .summary      = "Setup LSE clock (32.768 kHz)",
-     .defaults     = NULL,
-     .num_defaults = 0,
-     .handler      = lse_init,
-     },
-
 #ifdef REG_PRINTOUT
     {
      .name         = "dump_reg",
@@ -216,6 +208,33 @@ static const struct cmd cmd_list[] = {
      .handler      = reg_dump,
      },
 #endif
+
+    {
+     .name         = "lse_init",
+     .syntax       = "",
+     .summary      = "Setup LSE clock (32.768 kHz)",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = lse_init,
+     },
+
+    {
+     .name         = "fmc_erase",
+     .syntax       = "",
+     .summary      = "Erase entire FMC NAND Flash",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = fmc_erase_all,
+     },
+
+    {
+     .name         = "fmc_test_boot",
+     .syntax       = "",
+     .summary      = "Check NAND boot image",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = fmc_test_boot,
+     },
 };
 
 // character ring buffer

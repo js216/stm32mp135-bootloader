@@ -1,166 +1,222 @@
 // SPDX-License-Identifier: LicenseRef-SLA0044
 
 /**
- * @file usbd_msc_storage.h
- * @brief Debugging and diagnostics.
+ * @file usbd_msc_storage.c
+ * @brief USB MSC storage backend — SD card or NAND flash.
  * @author MCD Application Team
  * @copyright 2015 STMicroelectronics
  */
 
 #include "usbd_msc_storage.h"
+#include "board.h"
+#include "fmc.h"
 #include "sd.h"
 #include "stm32mp13xx_hal_def.h"
 #include "stm32mp13xx_hal_sd.h"
 
-#define STORAGE_LUN_NBR 1U
-#define STORAGE_BLK_NBR 0x100000U
-#define STORAGE_BLK_SIZ 0x200U
+#define STORAGE_LUN_NBR  1U
+#define STORAGE_BLK_NBR  0x100000U  /* fallback: 512 MB in 512-byte blocks */
+#define STORAGE_BLK_SIZ  0x200U     /* 512 bytes */
 
+/* ---------------------------------------------------------------------------
+ * Forward declarations
+ * ---------------------------------------------------------------------------*/
 uint8_t STORAGE_Init(uint8_t lun);
-
 uint8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num,
                             uint16_t *block_size);
-
 uint8_t STORAGE_IsReady(uint8_t lun);
-
 uint8_t STORAGE_IsWriteProtected(uint8_t lun);
-
 uint8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr,
                      uint16_t blk_len);
-
 uint8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr,
                       uint16_t blk_len);
-
 uint8_t STORAGE_GetMaxLun(void);
 
-uint8_t STORAGE_Inquirydata[] = /* 36 */
-    {
-
-        /* LUN 0 */
-        0x00, 0x80, 0x02, 0x02, (STANDARD_INQUIRY_DATA_LEN - 5),
-        0x00, 0x00, 0x00, 'S',  'T',
-        'M',  ' ',  ' ',  ' ',  ' ',
-        ' ', /* Manufacturer : 8 bytes */
-        'P',  'r',  'o',  'd',  'u',
-        'c',  't',  ' ', /* Product      : 16 Bytes */
-        ' ',  ' ',  ' ',  ' ',  ' ',
-        ' ',  ' ',  ' ',  '0',  '.',
-        '0',  '1', /* Version      : 4 Bytes */
+/* ---------------------------------------------------------------------------
+ * SCSI inquiry data
+ * ---------------------------------------------------------------------------*/
+uint8_t STORAGE_Inquirydata[] = /* 36 bytes */
+{
+   /* LUN 0 */
+   0x00, 0x80, 0x02, 0x02, (STANDARD_INQUIRY_DATA_LEN - 5),
+   0x00, 0x00, 0x00,
+   'S', 'T', 'M', ' ', ' ', ' ', ' ', ' ', /* Manufacturer : 8 bytes */
+   'P', 'r', 'o', 'd', 'u', 'c', 't', ' ', /* Product      : 16 bytes */
+   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+   '0', '.', '0', '1',                      /* Version      : 4 bytes  */
 };
 
 USBD_StorageTypeDef USBD_MSC_fops = {
-    STORAGE_Init,      STORAGE_GetCapacity,
-    STORAGE_IsReady,   STORAGE_IsWriteProtected,
-    STORAGE_Read,      STORAGE_Write,
-    STORAGE_GetMaxLun, STORAGE_Inquirydata,
-
+   STORAGE_Init,
+   STORAGE_GetCapacity,
+   STORAGE_IsReady,
+   STORAGE_IsWriteProtected,
+   STORAGE_Read,
+   STORAGE_Write,
+   STORAGE_GetMaxLun,
+   STORAGE_Inquirydata,
 };
 
+/* ---------------------------------------------------------------------------
+ * STORAGE_Init
+ * ---------------------------------------------------------------------------*/
 /**
- * @brief  Initializes the storage unit (medium)
- * @param  lun: Logical unit number
- * @retval Status (0 : OK / -1 : Error)
+ * @brief  Initialises the storage unit.  Both backends are assumed to have
+ *         been initialised already (sd_init / fmc_init called at boot).
+ * @param  lun  Logical unit number (unused)
+ * @retval 0 on success
  */
 uint8_t STORAGE_Init(uint8_t lun)
 {
    UNUSED(lun);
-
-   return (0);
+   return 0;
 }
 
+/* ---------------------------------------------------------------------------
+ * STORAGE_GetCapacity
+ * ---------------------------------------------------------------------------*/
 /**
  * @brief  Returns the medium capacity.
- * @param  lun: Logical unit number
- * @param  block_num: Number of total block number
- * @param  block_size: Block size
- * @retval Status (0: OK / -1: Error)
+ *
+ * For NAND: capacity is derived live from hnand.Config via fmc_block_count(),
+ * so it stays in sync with auto-detected geometry without duplication.
+ *
+ * @param  lun        Logical unit number (unused)
+ * @param  block_num  Out: total number of 512-byte blocks
+ * @param  block_size Out: block size in bytes (always 512)
+ * @retval 0 on success, -1 if NAND not initialised
  */
 uint8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num,
                             uint16_t *block_size)
 {
    UNUSED(lun);
 
-   *block_num  = STORAGE_BLK_NBR;
    *block_size = STORAGE_BLK_SIZ;
-   return (0);
-}
 
-/**
- * @brief  Checks whether the medium is ready.
- * @param  lun: Logical unit number
- * @retval Status (0: OK / -1: Error)
- */
-uint8_t STORAGE_IsReady(uint8_t lun)
-{
-   UNUSED(lun);
-
-   return (0);
-}
-
-/**
- * @brief  Checks whether the medium is write protected.
- * @param  lun: Logical unit number
- * @retval Status (0: write enabled / -1: otherwise)
- */
-uint8_t STORAGE_IsWriteProtected(uint8_t lun)
-{
-   UNUSED(lun);
+#ifdef NAND_FLASH
+      const uint32_t nand_blocks = fmc_block_count();
+      if (nand_blocks == 0U) {
+         /* fmc_init() not yet called or failed */
+         return (uint8_t)-1;
+      }
+      *block_num = nand_blocks;
+#else
+      *block_num = STORAGE_BLK_NBR;
+#endif
 
    return 0;
 }
 
+/* ---------------------------------------------------------------------------
+ * STORAGE_IsReady
+ * ---------------------------------------------------------------------------*/
 /**
- * @brief  Reads data from the SD card into the USB MSC buffer.
+ * @brief  Checks whether the medium is ready.
+ * @param  lun  Logical unit number (unused)
+ * @retval 0 always (both backends assumed ready after init)
+ */
+uint8_t STORAGE_IsReady(uint8_t lun)
+{
+   UNUSED(lun);
+   return 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * STORAGE_IsWriteProtected
+ * ---------------------------------------------------------------------------*/
+/**
+ * @brief  Checks whether the medium is write-protected.
+ * @param  lun  Logical unit number (unused)
+ * @retval 0 (write enabled)
+ */
+uint8_t STORAGE_IsWriteProtected(uint8_t lun)
+{
+   UNUSED(lun);
+   return 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * STORAGE_Read
+ * ---------------------------------------------------------------------------*/
+/**
+ * @brief  Reads data from the selected storage backend.
+ *
+ * NAND path: lba and blk_len must be page-aligned (multiples of
+ * sectors_per_page).  If not, USBD_FAIL is returned immediately — the host
+ * is expected to issue aligned requests once it has read the capacity.
+ *
  * @param  lun       Logical unit number (unused)
- * @param  buf       Output buffer for USB MSC
- * @param  blk_addr  Logical block address to read from SD
+ * @param  buf       Output buffer
+ * @param  blk_addr  Logical block address (512-byte units)
  * @param  blk_len   Number of 512-byte blocks to read
- * @retval 0 on success, -1 on error
+ * @retval USBD_OK on success, USBD_FAIL on error
  */
 uint8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr,
                      uint16_t blk_len)
 {
    (void)lun;
 
+#ifdef NAND_FLASH
+      if (fmc_read_blocks(buf, blk_addr, (uint32_t)blk_len) != HAL_OK) {
+         return USBD_FAIL;
+      }
+      return USBD_OK;
+#endif
+
+   /* SD path (unchanged) */
    if (HAL_SD_ReadBlocks(&sd_handle, buf, blk_addr, blk_len, 3000) != HAL_OK) {
       return USBD_FAIL;
    }
-
    while (HAL_SD_GetCardState(&sd_handle) != HAL_SD_CARD_TRANSFER)
-      ; // wait
-
+      ;
    return USBD_OK;
 }
 
+/* ---------------------------------------------------------------------------
+ * STORAGE_Write
+ * ---------------------------------------------------------------------------*/
 /**
- * @brief  Writes data into the medium.
- * @param  lun: Logical unit number
- * @param  buf: data buffer
- * @param  blk_addr: Logical block address
- * @param  blk_len: Blocks number
- * @retval Status (0 : OK / -1 : Error)
+ * @brief  Writes data to the selected storage backend.
+ *
+ * NAND path: the target region must already be erased (factory-flash usage).
+ * ECC is computed and written by fmc_write_blocks().
+ * lba and blk_len must be page-aligned — see STORAGE_Read note above.
+ *
+ * @param  lun       Logical unit number (unused)
+ * @param  buf       Input buffer
+ * @param  blk_addr  Logical block address (512-byte units)
+ * @param  blk_len   Number of 512-byte blocks to write
+ * @retval USBD_OK on success, USBD_FAIL on error
  */
 uint8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr,
                       uint16_t blk_len)
 {
    (void)lun;
 
+#ifdef NAND_FLASH
+      if (fmc_write_blocks(buf, blk_addr, (uint32_t)blk_len) != HAL_OK) {
+         return USBD_FAIL;
+      }
+      return USBD_OK;
+#endif
+
+   /* SD path (unchanged) */
    if (HAL_SD_WriteBlocks(&sd_handle, buf, blk_addr, blk_len, 3000) != HAL_OK) {
       return USBD_FAIL;
    }
-
    while (HAL_SD_GetCardState(&sd_handle) != HAL_SD_CARD_TRANSFER)
-      ; // wait
-
+      ;
    return USBD_OK;
 }
 
+/* ---------------------------------------------------------------------------
+ * STORAGE_GetMaxLun
+ * ---------------------------------------------------------------------------*/
 /**
- * @brief  Returns the Max Supported LUNs.
- * @param  None
- * @retval Lun(s) number
+ * @brief  Returns the maximum supported LUN index.
+ * @retval STORAGE_LUN_NBR - 1
  */
 uint8_t STORAGE_GetMaxLun(void)
 {
-   return (STORAGE_LUN_NBR - 1);
+   return (STORAGE_LUN_NBR - 1U);
 }

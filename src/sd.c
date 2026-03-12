@@ -7,11 +7,25 @@
  * @copyright 2025 Stanford Research Systems, Inc.
  */
 
+#include <stdint.h>
 #include "sd.h"
+#include "board.h"
+#include "irq.h"
+
+// cppcheck-suppress unusedFunction
+void SDMMC1_IRQHandler(void)
+{
+   HAL_SD_IRQHandler(&sd_handle);
+}
+
+// global variables
+SD_HandleTypeDef sd_handle;
+
+#ifndef NAND_FLASH
+
 #include "cmsis_gcc.h"
 #include "debug.h"
 #include "defaults.h"
-#include "irq.h"
 #include "irq_ctrl.h"
 #include "printf.h"
 #include "stm32mp135fxx_ca7.h"
@@ -23,7 +37,6 @@
 #include "stm32mp13xx_ll_sdmmc.h"
 #include <inttypes.h>
 #include <stdbool.h>
-#include <stdint.h>
 
 #define BLOCK_SIZE 512U
 #define DDR_SIZE   0x20000000U // 512 MB
@@ -34,15 +47,6 @@ struct mbr_partition {
    uint32_t lba_start;
    uint32_t num_sectors;
 };
-
-// global variables
-SD_HandleTypeDef sd_handle;
-
-// cppcheck-suppress unusedFunction
-void SDMMC1_IRQHandler(void)
-{
-   HAL_SD_IRQHandler(&sd_handle);
-}
 
 void sd_init(void)
 {
@@ -210,6 +214,8 @@ void load_sd_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    uint32_t n   = DEF_LINUX_LEN;
    uint32_t lba = DEF_LINUX_BLK;
 
+   my_printf("load_sd_cmd() called.\r\n");
+
    if (argc >= 1)
       n = arg1;
 
@@ -218,3 +224,45 @@ void load_sd_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    sd_read(lba, n, arg3);
 }
+
+#else // NAND_FLASH
+
+void sd_init(void)
+{
+}
+
+void load_sd_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+}
+
+void sd_read(uint32_t lba, uint32_t num_blocks, uint32_t dest_addr)
+{
+   (void)lba;
+   (void)num_blocks;
+   (void)dest_addr;
+}
+
+void sd_print_mbr(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+}
+
+void sd_load_mbr(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+}
+
+
+#endif // NAND_FLASH
+
+// end file sd.c

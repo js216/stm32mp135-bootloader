@@ -13,6 +13,7 @@
 #include "ddr.h"
 #include "defaults.h"
 #include "eth.h"
+#include "fmc.h"
 #include "lcd.h"
 #include "sd.h"
 #include "setup.h"
@@ -48,6 +49,7 @@ int main(void)
    ddr_init();
    mmu_init();
    sd_init();
+   fmc_init(0, 0, 0, 0);
    lcd_init();
    blink();
 

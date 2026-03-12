@@ -7,8 +7,12 @@
  * @copyright 2026 Stanford Research Systems, Inc.
  */
 
+#include <stdint.h>
 #include "eth.h"
 #include "board.h"
+
+#ifdef ETHERNET
+
 #include "irq.h"
 #include "irq_ctrl.h"
 #include "printf.h"
@@ -19,7 +23,6 @@
 #include "stm32mp13xx_hal_gpio.h"
 #include "stm32mp13xx_hal_rcc.h"
 #include <inttypes.h>
-#include <stdint.h>
 #include <string.h>
 
 #if (USE_MCP23x17 == 1)
@@ -413,5 +416,29 @@ void eth_send_test_frame(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    my_printf("Test Ethernet frame sent\r\n");
 }
+
+#else // ETHERNET
+
+void eth_init(void)
+{
+}
+
+void eth_status(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+}
+
+void eth_send_test_frame(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+}
+
+#endif // ETHERNET
 
 // end file eth.c
