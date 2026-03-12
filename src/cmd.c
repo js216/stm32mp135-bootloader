@@ -238,6 +238,15 @@ static const struct cmd cmd_list[] = {
      },
 
     {
+     .name         = "fmc_scan",
+     .syntax       = "",
+     .summary      = "Scan NAND OOB and refresh bad block table",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = fmc_scan,
+     },
+
+    {
      .name         = "fmc_test_boot",
      .syntax       = "",
      .summary      = "Check NAND boot image",

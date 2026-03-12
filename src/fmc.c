@@ -38,6 +38,9 @@ static int                nand_ready = 0;
 static uint8_t * const buf_a = (uint8_t *)BUF_A_ADDR;
 static uint8_t * const buf_b = (uint8_t *)BUF_B_ADDR;
 
+/* Bad block table: 1 = bad, 0 = good.  Populated by fmc_init OOB scan. */
+static uint8_t bad[FMC_PLANE_NBR * FMC_PLANE_SIZE_BLOCKS];
+
 static inline void setupgpio(GPIO_TypeDef *gpio, GPIO_InitTypeDef *init,
                               uint32_t pin)
 {
@@ -91,6 +94,45 @@ static HAL_StatusTypeDef erase_block(uint32_t blk)
 {
    NAND_AddressTypeDef a = page_addr(blk, 0);
    return HAL_NAND_Erase_Block(&hnand, &a);
+}
+
+static int is_bad_oob(uint32_t blk)
+{
+   uint8_t oob[FMC_OOB_SIZE_BYTES];
+   NAND_AddressTypeDef a = page_addr(blk, 0);
+   if (HAL_NAND_Read_SpareArea_8b(&hnand, &a, oob, 1) != HAL_OK)
+      return 1;
+   if (oob[0] != 0xFFU)
+      return 1;
+   a = page_addr(blk, 1);
+   if (HAL_NAND_Read_SpareArea_8b(&hnand, &a, oob, 1) != HAL_OK)
+      return 1;
+   return oob[0] != 0xFFU;
+}
+
+static void mark_bad_oob(uint32_t blk)
+{
+   uint8_t oob[FMC_OOB_SIZE_BYTES];
+   memset(oob, 0xFFU, sizeof(oob));
+   oob[0] = 0x00U;
+   NAND_AddressTypeDef a = page_addr(blk, 0);
+   HAL_NAND_Write_SpareArea_8b(&hnand, &a, oob, 1);
+   a = page_addr(blk, 1);
+   HAL_NAND_Write_SpareArea_8b(&hnand, &a, oob, 1);
+}
+
+static uint32_t lba_to_phys_block(uint32_t good_idx)
+{
+   const uint32_t total = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
+   uint32_t good = 0;
+   for (uint32_t b = 0; b < total; b++) {
+      if (!bad[b]) {
+         if (good == good_idx)
+            return b;
+         good++;
+      }
+   }
+   return UINT32_MAX;
 }
 
 static HAL_StatusTypeDef read_block(uint32_t blk, uint8_t *buf)
@@ -229,6 +271,17 @@ void fmc_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    }
 
    nand_ready = 1;
+
+   const uint32_t total = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
+   memset(bad, 0, total);
+   uint32_t bad_count = 0;
+   for (uint32_t blk = 0; blk < total; blk++) {
+      if (is_bad_oob(blk)) {
+         bad[blk] = 1;
+         bad_count++;
+      }
+   }
+   my_printf("FMC: %lu bad block(s) found\r\n", bad_count);
 }
 
 /* USB MSC: lba in pages; read_page/write_page used directly because
@@ -239,9 +292,11 @@ HAL_StatusTypeDef fmc_read_blocks(uint8_t *buf, uint32_t lba, uint32_t n)
       return HAL_ERROR;
    const uint32_t ppb = hnand.Config.BlockSize;
    for (uint32_t i = 0; i < n; i++) {
-      const uint32_t ap = lba + i;
-      if (read_page(ap / ppb, ap % ppb,
-                    buf + i * hnand.Config.PageSize) != HAL_OK)
+      const uint32_t ap   = lba + i;
+      const uint32_t phys = lba_to_phys_block(ap / ppb);
+      if (phys == UINT32_MAX)
+         return HAL_ERROR;
+      if (read_page(phys, ap % ppb, buf + i * hnand.Config.PageSize) != HAL_OK)
          return HAL_ERROR;
    }
    return HAL_OK;
@@ -253,9 +308,11 @@ HAL_StatusTypeDef fmc_write_blocks(const uint8_t *buf, uint32_t lba, uint32_t n)
       return HAL_ERROR;
    const uint32_t ppb = hnand.Config.BlockSize;
    for (uint32_t i = 0; i < n; i++) {
-      const uint32_t ap = lba + i;
-      if (write_page(ap / ppb, ap % ppb,
-                     buf + i * hnand.Config.PageSize) != HAL_OK)
+      const uint32_t ap   = lba + i;
+      const uint32_t phys = lba_to_phys_block(ap / ppb);
+      if (phys == UINT32_MAX)
+         return HAL_ERROR;
+      if (write_page(phys, ap % ppb, buf + i * hnand.Config.PageSize) != HAL_OK)
          return HAL_ERROR;
    }
    return HAL_OK;
@@ -265,9 +322,12 @@ uint32_t fmc_block_count(void)
 {
    if (!nand_ready)
       return 0;
-   /* Returns total pages — matches the page-sized LBA unit above. */
-   return hnand.Config.PlaneNbr * hnand.Config.PlaneSize *
-          hnand.Config.BlockSize;
+   const uint32_t total = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
+   uint32_t good = 0;
+   for (uint32_t b = 0; b < total; b++)
+      if (!bad[b])
+         good++;
+   return good * hnand.Config.BlockSize;
 }
 
 void fmc_erase_all(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
@@ -275,26 +335,36 @@ void fmc_erase_all(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)argc; (void)arg1; (void)arg2; (void)arg3;
    if (!nand_ready) { my_printf("FMC: not initialised\r\n"); return; }
 
-   const uint32_t n      = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
-   uint32_t       bad    = 0;
-   const uint32_t t0     = HAL_GetTick();
+   const uint32_t n       = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
+   uint32_t       pre     = 0;
+   uint32_t       new_bad = 0;
+   const uint32_t t0      = HAL_GetTick();
    uint32_t       t_print = t0;
 
    my_printf("FMC: erasing %lu blocks\r\n", n);
    for (uint32_t blk = 0; blk < n; blk++) {
+      if (bad[blk]) {
+         my_printf("\rskip %lu (pre-marked bad)\r\n", blk);
+         pre++;
+         continue;
+      }
       if (erase_block(blk) != HAL_OK) {
-         my_printf("\rbad block %lu\r\n", blk);
-         bad++;
+         my_printf("\rnewly bad %lu (erase fail)\r\n", blk);
+         mark_bad_oob(blk);
+         bad[blk] = 1;
+         new_bad++;
       }
       const uint32_t now = HAL_GetTick();
       if ((now - t_print) >= 2000U) {
-         my_printf("\rblk %lu/%lu  (%lu bad)  ", blk + 1, n, bad);
+         my_printf("\rblk %lu/%lu  (%lu pre-bad, %lu new-bad)  ",
+                   blk + 1, n, pre, new_bad);
          print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
          t_print = now;
       }
    }
    const uint32_t elapsed = HAL_GetTick() - t0;
-   my_printf("\r\ndone: %lu bad, %lu s, avg ", bad, elapsed / 1000U);
+   my_printf("\r\ndone: %lu pre-marked bad, %lu newly bad, %lu s, avg ",
+             pre, new_bad, elapsed / 1000U);
    print_mbs(n * BLOCK_BYTES, elapsed);
    my_printf("\r\n");
 }
@@ -441,6 +511,24 @@ void fmc_test_read(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    my_printf("\r\n");
 }
 
+void fmc_scan(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc; (void)arg1; (void)arg2; (void)arg3;
+   if (!nand_ready) { my_printf("FMC: not initialised\r\n"); return; }
+
+   const uint32_t total = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
+   uint32_t count = 0;
+   for (uint32_t blk = 0; blk < total; blk++) {
+      const int b = is_bad_oob(blk);
+      bad[blk] = (uint8_t)b;
+      if (b) {
+         my_printf("bad: blk %lu\r\n", blk);
+         count++;
+      }
+   }
+   my_printf("scan done: %lu bad / %lu total\r\n", count, total);
+}
+
 #else // NAND_FLASH
 
 void fmc_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
@@ -478,6 +566,11 @@ void fmc_test_write(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 }
 
 void fmc_test_read(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc; (void)arg1; (void)arg2; (void)arg3;
+}
+
+void fmc_scan(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)argc; (void)arg1; (void)arg2; (void)arg3;
 }
