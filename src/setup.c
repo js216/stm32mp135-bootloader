@@ -296,6 +296,12 @@ void perclk_init(void)
    if (HAL_RCCEx_PeriphCLKConfig(&pclk) != HAL_OK) {
       ERROR("LPTIM3");
    }
+
+   pclk.PeriphClockSelection = RCC_PERIPHCLK_FMC;
+   pclk.FmcClockSelection    = RCC_FMCCLKSOURCE_ACLK;
+   if (HAL_RCCEx_PeriphCLKConfig(&pclk) != HAL_OK) {
+      ERROR("FMC");
+   }
 }
 
 void etzpc_init(void)
