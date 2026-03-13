@@ -23,10 +23,12 @@
 #define NAND_PT_VERSION    1U
 #define NAND_PT_MAX_PARTS  8U
 
-#define NAND_BLOCK_BOOT    0U  /* bootloader (primary + redundant, 2 blocks) */
-#define NAND_BLOCK_PT      2U  /* partition table */
-#define NAND_BLOCK_DTB     3U  /* device tree blob */
-#define NAND_BLOCK_KERNEL  4U  /* kernel image */
+#define NAND_BLOCK_BOOT          0U   /* bootloader (primary + redundant, 2 blocks) */
+#define NAND_BLOCK_PT            2U   /* partition table */
+#define NAND_BLOCK_DTB           3U   /* device tree blob */
+#define NAND_BLOCK_KERNEL        4U   /* kernel image */
+#define NAND_KERNEL_MAX_BLOCKS  64U   /* reserved for kernel; rootfs follows after */
+#define NAND_BLOCK_ROOTFS       (NAND_BLOCK_KERNEL + NAND_KERNEL_MAX_BLOCKS)  /* 68 */
 
 typedef struct {
    char     name[16];

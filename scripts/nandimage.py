@@ -27,10 +27,12 @@ PT_MAGIC     = 0x4E414E44  # "NAND"
 PT_VERSION   = 1
 PT_MAX_PARTS = 8
 
-BLOCK_BOOT   = 0
-BLOCK_PT     = 2
-BLOCK_DTB    = 3
-BLOCK_KERNEL = 4
+BLOCK_BOOT       = 0
+BLOCK_PT         = 2
+BLOCK_DTB        = 3
+BLOCK_KERNEL     = 4
+KERNEL_MAX_BLOCKS = 64   # kernel partition is always this many blocks; rootfs follows after
+BLOCK_ROOTFS     = BLOCK_KERNEL + KERNEL_MAX_BLOCKS  # 68
 
 # struct nand_part_t:  char name[16], uint32 start_block, uint32 num_blocks
 PART_FMT  = '<16sII'
@@ -105,31 +107,27 @@ def main():
             parts.append(('dtb', BLOCK_DTB, nblocks(len(dtb_data))))
             placements.append((Path(args.dtb).name, BLOCK_DTB, len(dtb_data)))
 
-        # Kernel at block 4
-        current_block = BLOCK_KERNEL
+        # Kernel at block 4; always occupies KERNEL_MAX_BLOCKS regardless of actual size
         if args.kernel:
             kernel_data = Path(args.kernel).read_bytes()
-            write_block(img, BLOCK_KERNEL, kernel_data)
             kernel_blks = nblocks(len(kernel_data))
+            if kernel_blks > KERNEL_MAX_BLOCKS:
+                print(f'ERROR: kernel is {kernel_blks} blocks, exceeds KERNEL_MAX_BLOCKS={KERNEL_MAX_BLOCKS}',
+                      file=sys.stderr)
+                sys.exit(1)
+            write_block(img, BLOCK_KERNEL, kernel_data)
             parts.append(('kernel', BLOCK_KERNEL, kernel_blks))
             placements.append((Path(args.kernel).name, BLOCK_KERNEL, len(kernel_data)))
-            current_block = BLOCK_KERNEL + kernel_blks
-        elif args.dtb:
-            current_block = BLOCK_DTB + 1
-        else:
-            current_block = BLOCK_PT + 1
 
-        # Rootfs immediately after kernel
+        # Rootfs always starts at BLOCK_ROOTFS (block 68) for a fixed MTD layout
+        total_blocks = BLOCK_ROOTFS
         if args.rootfs:
             rootfs_data = Path(args.rootfs).read_bytes()
-            rootfs_start = current_block
-            write_block(img, rootfs_start, rootfs_data)
+            write_block(img, BLOCK_ROOTFS, rootfs_data)
             rootfs_blks = nblocks(len(rootfs_data))
-            parts.append(('rootfs', rootfs_start, rootfs_blks))
-            placements.append((Path(args.rootfs).name, rootfs_start, len(rootfs_data)))
-            current_block = rootfs_start + rootfs_blks
-
-        total_blocks = current_block
+            parts.append(('rootfs', BLOCK_ROOTFS, rootfs_blks))
+            placements.append((Path(args.rootfs).name, BLOCK_ROOTFS, len(rootfs_data)))
+            total_blocks = BLOCK_ROOTFS + rootfs_blks
 
         # Partition table at block 2 (written last, after total_blocks is known)
         parts.append(('ptable', BLOCK_PT, 1))

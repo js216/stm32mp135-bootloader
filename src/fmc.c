@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "board.h"
+#include "defaults.h"
 #include "fmc.h"
 #include "nand_pt.h"
 
@@ -657,6 +658,87 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    my_printf("\r\n");
 }
 
+void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc; (void)arg1; (void)arg2; (void)arg3;
+   if (!nand_ready) { my_printf("FMC: not initialised\r\n"); return; }
+
+   /* Read partition table into buf_a. */
+   const uint32_t pt_phys = lba_to_phys_block(NAND_BLOCK_PT);
+   if (pt_phys == UINT32_MAX) {
+      my_printf("bload: cannot find PT block\r\n");
+      return;
+   }
+   if (read_block(pt_phys, buf_a) != HAL_OK) {
+      my_printf("bload: PT read error\r\n");
+      return;
+   }
+
+   const nand_pt_t *pt = (const nand_pt_t *)buf_a;
+   if (pt->magic != NAND_PT_MAGIC) {
+      my_printf("bload: bad PT magic 0x%08lx\r\n", (unsigned long)pt->magic);
+      return;
+   }
+   uint32_t sum = 0;
+   const uint8_t *pb = (const uint8_t *)pt;
+   for (uint32_t i = 0; i < (uint32_t)offsetof(nand_pt_t, checksum); i++)
+      sum += pb[i];
+   if (sum != pt->checksum) {
+      my_printf("bload: PT checksum mismatch\r\n");
+      return;
+   }
+
+   /* Find kernel and dtb partitions. */
+   const nand_part_t *kern_p = NULL;
+   const nand_part_t *dtb_p  = NULL;
+   for (uint32_t i = 0; i < pt->num_parts && i < NAND_PT_MAX_PARTS; i++) {
+      if (strncmp(pt->parts[i].name, "kernel", 16) == 0)
+         kern_p = &pt->parts[i];
+      else if (strncmp(pt->parts[i].name, "dtb", 16) == 0)
+         dtb_p = &pt->parts[i];
+   }
+   if (!kern_p) { my_printf("bload: no kernel partition\r\n"); return; }
+   if (!dtb_p)  { my_printf("bload: no dtb partition\r\n");    return; }
+
+   /* Load DTB. */
+   my_printf("bload: DTB  blk %lu+%lu -> 0x%08lx\r\n",
+             (unsigned long)dtb_p->start_block,
+             (unsigned long)dtb_p->num_blocks,
+             (unsigned long)DEF_DTB_ADDR);
+   uint8_t * const dtb_dst = (uint8_t *)DEF_DTB_ADDR;
+   for (uint32_t i = 0; i < dtb_p->num_blocks; i++) {
+      const uint32_t phys = lba_to_phys_block(dtb_p->start_block + i);
+      if (phys == UINT32_MAX) {
+         my_printf("bload: DTB block %lu missing\r\n", (unsigned long)i);
+         return;
+      }
+      if (read_block(phys, dtb_dst + i * BLOCK_BYTES) != HAL_OK) {
+         my_printf("bload: DTB read error blk %lu\r\n", (unsigned long)i);
+         return;
+      }
+   }
+
+   /* Load kernel. */
+   my_printf("bload: kernel blk %lu+%lu -> 0x%08lx\r\n",
+             (unsigned long)kern_p->start_block,
+             (unsigned long)kern_p->num_blocks,
+             (unsigned long)DEF_LINUX_ADDR);
+   uint8_t * const kern_dst = (uint8_t *)DEF_LINUX_ADDR;
+   for (uint32_t i = 0; i < kern_p->num_blocks; i++) {
+      const uint32_t phys = lba_to_phys_block(kern_p->start_block + i);
+      if (phys == UINT32_MAX) {
+         my_printf("bload: kernel block %lu missing\r\n", (unsigned long)i);
+         return;
+      }
+      if (read_block(phys, kern_dst + i * BLOCK_BYTES) != HAL_OK) {
+         my_printf("bload: kernel read error blk %lu\r\n", (unsigned long)i);
+         return;
+      }
+   }
+
+   my_printf("bload: done\r\n");
+}
+
 void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)arg2; (void)arg3;
@@ -756,6 +838,11 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 }
 
 void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc; (void)arg1; (void)arg2; (void)arg3;
+}
+
+void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)argc; (void)arg1; (void)arg2; (void)arg3;
 }

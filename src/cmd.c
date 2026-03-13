@@ -265,6 +265,15 @@ static const struct cmd cmd_list[] = {
      },
 
     {
+     .name         = "fmc_bload",
+     .syntax       = "",
+     .summary      = "Load kernel+DTB from NAND partitions into DDR",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = fmc_bload,
+     },
+
+    {
      .name         = "fmc_test_boot",
      .syntax       = "",
      .summary      = "Check NAND boot image",
@@ -357,7 +366,11 @@ void cmd_autoboot(void)
       }
       boot_ticks--;
    }
+#ifdef NAND_FLASH
+   fmc_bload(0, 0, 0, 0);
+#else
    sd_load_mbr(0, 0, 0, 0);
+#endif
    boot_jump(1, DEF_LINUX_ADDR, 0, 0);
 #endif
 }
