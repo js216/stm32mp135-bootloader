@@ -59,28 +59,13 @@ static inline NAND_AddressTypeDef page_addr(uint32_t blk, uint32_t pg)
    return a;
 }
 
-static int page_is_blank(const uint8_t *buf)
-{
-   for (uint32_t i = 0; i < hnand.Config.PageSize; i++)
-      if (buf[i] != 0xFFU)
-         return 0;
-   return 1;
-}
 
 static HAL_StatusTypeDef read_page(uint32_t blk, uint32_t pg, uint8_t *buf)
 {
    NAND_AddressTypeDef a = page_addr(blk, pg);
-   uint32_t n = 0;
+   uint32_t n;
    if (HAL_NAND_ECC_Read_Page_8b(&hnand, &a, buf, 1, &n) != HAL_OK)
       return HAL_ERROR;
-   if (!page_is_blank(buf)) {
-      NAND_EccStatisticsTypeDef st;
-      HAL_NAND_ECC_GetStatistics(&hnand, &st);
-      if (st.CorrectibleErrorMax > 8U) {
-         my_printf("ECC uncorrectable: blk %lu pg %lu\r\n", blk, pg);
-         return HAL_ERROR;
-      }
-   }
    return HAL_OK;
 }
 
@@ -139,10 +124,9 @@ static uint32_t lba_to_phys_block(uint32_t good_idx)
 
 static HAL_StatusTypeDef read_block(uint32_t blk, uint8_t *buf)
 {
-   for (uint32_t pg = 0; pg < hnand.Config.BlockSize; pg++)
-      if (read_page(blk, pg, buf + pg * hnand.Config.PageSize) != HAL_OK)
-         return HAL_ERROR;
-   return HAL_OK;
+   NAND_AddressTypeDef a = page_addr(blk, 0);
+   uint32_t n;
+   return HAL_NAND_ECC_Read_Page_8b(&hnand, &a, buf, hnand.Config.BlockSize, &n);
 }
 
 static HAL_StatusTypeDef write_block(uint32_t blk, const uint8_t *buf)
@@ -504,6 +488,7 @@ void fmc_test_read(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    my_printf("\r\n");
 }
 
+
 void fmc_scan(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)argc; (void)arg1; (void)arg2; (void)arg3;
@@ -601,7 +586,6 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg2; (void)arg3;
    if (!nand_ready) { my_printf("FMC: not initialised\r\n"); return; }
 
-   const uint32_t ppb      = hnand.Config.BlockSize;
    const uint32_t total    = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
    const uint32_t max_blks = FMC_DDR_BUF_SIZE / BLOCK_BYTES;
    const uint32_t n        = (argc >= 1 && arg1 > 0 && arg1 <= max_blks)
@@ -622,11 +606,8 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       if (bad[phys]) { phys++; continue; }
 
       uint8_t * const dst = ddr + good_idx * BLOCK_BYTES;
-      int fail = 0;
-      for (uint32_t pg = 0; pg < ppb && !fail; pg++)
-         if (read_page(phys, pg, dst + pg * hnand.Config.PageSize) != HAL_OK)
-            fail = 1;
-      if (fail) rd_errs++;
+      if (read_block(phys, dst) != HAL_OK)
+         rd_errs++;
 
       good_idx++;
       phys++;

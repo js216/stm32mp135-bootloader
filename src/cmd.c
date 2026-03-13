@@ -276,7 +276,7 @@ static const struct cmd cmd_list[] = {
     {
      .name         = "fmc_test_write",
      .syntax       = "",
-     .summary      = "Write PRBS to NAND flash.",
+     .summary      = "Write PRBS to NAND flash (run fmc_erase first).",
      .defaults     = NULL,
      .num_defaults = 0,
      .handler      = fmc_test_write,
@@ -290,6 +290,7 @@ static const struct cmd cmd_list[] = {
      .num_defaults = 0,
      .handler      = fmc_test_read,
      },
+
 #endif
 };
 
