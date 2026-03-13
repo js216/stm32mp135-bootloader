@@ -562,12 +562,11 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       const uint8_t * const src = ddr + good_idx * BLOCK_BYTES;
       int advance = 1;
 
-      /* Skip all-0xFF blocks (unwritten regions in DDR image). */
-      int all_ff = 1;
-      for (uint32_t i = 0; i < BLOCK_BYTES && all_ff; i++)
-         if (src[i] != 0xFFU) all_ff = 0;
+      /* Skip if NAND block already matches DDR. */
+      int match = (read_block(phys, buf_a) == HAL_OK) &&
+                  (memcmp(buf_a, src, BLOCK_BYTES) == 0);
 
-      if (all_ff) {
+      if (match) {
          skipped++;
       } else if (erase_block(phys) != HAL_OK) {
          my_printf("\rnewly bad %lu (flush erase)\r\n", phys);
