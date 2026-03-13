@@ -7,10 +7,12 @@
  * @copyright 2026 Stanford Research Systems, Inc.
  */
 
+#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 #include "board.h"
 #include "fmc.h"
+#include "nand_pt.h"
 
 #ifdef NAND_FLASH
 
@@ -411,12 +413,69 @@ static void check_boot_block(uint32_t blk)
                 computed, checksum);
 }
 
+static void check_partition_table(void)
+{
+   my_printf("partition table: block %u\r\n", NAND_BLOCK_PT);
+   if (read_block(NAND_BLOCK_PT, buf_a) != HAL_OK) {
+      my_printf("  read error\r\n");
+      return;
+   }
+   const nand_pt_t *pt = (const nand_pt_t *)buf_a;
+   if (pt->magic != NAND_PT_MAGIC) {
+      my_printf("  bad magic: 0x%08lx\r\n", (unsigned long)pt->magic);
+      return;
+   }
+   if (pt->version != NAND_PT_VERSION) {
+      my_printf("  unknown version: %lu\r\n", (unsigned long)pt->version);
+      return;
+   }
+   uint32_t sum = 0;
+   const uint8_t *b = (const uint8_t *)pt;
+   for (uint32_t i = 0; i < (uint32_t)offsetof(nand_pt_t, checksum); i++)
+      sum += b[i];
+   if (sum != pt->checksum) {
+      my_printf("  checksum MISMATCH computed 0x%08lx stored 0x%08lx\r\n",
+                (unsigned long)sum, (unsigned long)pt->checksum);
+      return;
+   }
+   my_printf("  checksum OK  total_blocks %lu  %lu partition(s)\r\n",
+             (unsigned long)pt->total_blocks, (unsigned long)pt->num_parts);
+   for (uint32_t i = 0; i < pt->num_parts && i < NAND_PT_MAX_PARTS; i++) {
+      const nand_part_t *p = &pt->parts[i];
+      my_printf("  [%lu] %-16s  block %lu  len %lu\r\n",
+                (unsigned long)i, p->name,
+                (unsigned long)p->start_block, (unsigned long)p->num_blocks);
+   }
+}
+
+static void check_dtb(void)
+{
+   my_printf("DTB: block %u\r\n", NAND_BLOCK_DTB);
+   if (read_block(NAND_BLOCK_DTB, buf_a) != HAL_OK) {
+      my_printf("  read error\r\n");
+      return;
+   }
+   /* FDT magic: 0xD00DFEED big-endian */
+   const uint8_t *h = buf_a;
+   const uint32_t magic = ((uint32_t)h[0] << 24) | ((uint32_t)h[1] << 16) |
+                          ((uint32_t)h[2] <<  8) |  (uint32_t)h[3];
+   if (magic != 0xD00DFEEDU) {
+      my_printf("  bad FDT magic: 0x%08lx\r\n", (unsigned long)magic);
+      return;
+   }
+   const uint32_t totalsize = ((uint32_t)h[4] << 24) | ((uint32_t)h[5] << 16) |
+                              ((uint32_t)h[6] <<  8) |  (uint32_t)h[7];
+   my_printf("  FDT magic OK  totalsize %lu bytes\r\n", (unsigned long)totalsize);
+}
+
 void fmc_test_boot(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)argc; (void)arg1; (void)arg2; (void)arg3;
    if (!nand_ready) { my_printf("FMC: not initialised\r\n"); return; }
    check_boot_block(0);
    check_boot_block(1);
+   check_partition_table();
+   check_dtb();
 }
 
 void fmc_test_write(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
@@ -507,6 +566,21 @@ void fmc_scan(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    my_printf("scan done: %lu bad / %lu total\r\n", count, total);
 }
 
+static uint32_t pt_total_blocks(void)
+{
+   const nand_pt_t * const pt = (const nand_pt_t *)(
+      FMC_DDR_BUF_ADDR + (uint32_t)(NAND_BLOCK_PT * BLOCK_BYTES));
+   if (pt->magic != NAND_PT_MAGIC)
+      return 0;
+   uint32_t sum = 0;
+   const uint8_t *b = (const uint8_t *)pt;
+   for (uint32_t i = 0; i < (uint32_t)offsetof(nand_pt_t, checksum); i++)
+      sum += b[i];
+   if (sum != pt->checksum)
+      return 0;
+   return pt->total_blocks;
+}
+
 void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)arg2; (void)arg3;
@@ -515,8 +589,10 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    const uint32_t ppb      = hnand.Config.BlockSize;
    const uint32_t total    = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
    const uint32_t max_blks = FMC_DDR_BUF_SIZE / BLOCK_BYTES;
-   const uint32_t n        = (argc >= 1 && arg1 > 0 && arg1 <= max_blks)
-                             ? arg1 : max_blks;
+   const uint32_t pt_n     = pt_total_blocks();
+   const uint32_t n        = (argc >= 1 && arg1 > 0 && arg1 <= max_blks) ? arg1 :
+                             (pt_n > 0 && pt_n <= max_blks)               ? pt_n :
+                             max_blks;
    const uint8_t * const ddr = (const uint8_t *)FMC_DDR_BUF_ADDR;
 
    fmc_flush_active = 1;
