@@ -10,6 +10,7 @@ Block layout (matches nand_pt.h):
   2    partition table
   3    DTB
   4+   kernel
+  N+   rootfs
 """
 
 import argparse
@@ -78,6 +79,8 @@ def main():
                         help='Device tree blob (.dtb)')
     parser.add_argument('--kernel', metavar='FILE',
                         help='Kernel image')
+    parser.add_argument('--rootfs', metavar='FILE',
+                        help='Root filesystem image')
     args = parser.parse_args()
 
     img_path = Path(args.image)
@@ -115,6 +118,16 @@ def main():
             current_block = BLOCK_DTB + 1
         else:
             current_block = BLOCK_PT + 1
+
+        # Rootfs immediately after kernel
+        if args.rootfs:
+            rootfs_data = Path(args.rootfs).read_bytes()
+            rootfs_start = current_block
+            write_block(img, rootfs_start, rootfs_data)
+            rootfs_blks = nblocks(len(rootfs_data))
+            parts.append(('rootfs', rootfs_start, rootfs_blks))
+            placements.append((Path(args.rootfs).name, rootfs_start, len(rootfs_data)))
+            current_block = rootfs_start + rootfs_blks
 
         total_blocks = current_block
 
