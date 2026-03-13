@@ -249,7 +249,7 @@ static const struct cmd cmd_list[] = {
     {
      .name         = "fmc_flush",
      .syntax       = "[n_blocks]",
-     .summary      = "Write DDR buffer to NAND (erase before write; disconnect USB first)",
+     .summary      = "Write DDR buffer to NAND (erase before write; USB blocked during operation)",
      .defaults     = NULL,
      .num_defaults = 0,
      .handler      = fmc_flush,

@@ -155,6 +155,8 @@ uint8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr,
    (void)lun;
 
 #ifdef NAND_FLASH
+   if (fmc_flush_active)
+      return USBD_BUSY;
    memcpy(buf, ddr_buf + blk_addr * STORAGE_BLK_SIZ,
           (uint32_t)blk_len * STORAGE_BLK_SIZ);
    return USBD_OK;

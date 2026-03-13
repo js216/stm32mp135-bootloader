@@ -608,6 +608,8 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
                              ? arg1 : max_blks;
    uint8_t * const ddr = (uint8_t *)FMC_DDR_BUF_ADDR;
 
+   fmc_flush_active = 1;
+
    uint32_t rd_errs  = 0;
    uint32_t good_idx = 0;
    uint32_t phys     = 0;
@@ -638,6 +640,7 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       }
    }
 
+   fmc_flush_active = 0;
    const uint32_t elapsed = HAL_GetTick() - t0;
    my_printf("\r\ndone: %lu rd errs, %lu s, avg ", rd_errs, elapsed / 1000U);
    print_mbs(n * BLOCK_BYTES, elapsed);
