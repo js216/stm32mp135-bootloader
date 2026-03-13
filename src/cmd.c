@@ -230,8 +230,8 @@ static const struct cmd cmd_list[] = {
 #ifdef NAND_FLASH
     {
      .name         = "fmc_erase",
-     .syntax       = "",
-     .summary      = "Erase entire FMC NAND Flash",
+     .syntax       = "[n_blocks]",
+     .summary      = "Erase FMC NAND Flash (default: all blocks)",
      .defaults     = NULL,
      .num_defaults = 0,
      .handler      = fmc_erase_all,

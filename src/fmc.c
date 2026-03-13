@@ -335,7 +335,8 @@ void fmc_erase_all(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)argc; (void)arg1; (void)arg2; (void)arg3;
    if (!nand_ready) { my_printf("FMC: not initialised\r\n"); return; }
 
-   const uint32_t n       = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
+   const uint32_t total   = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
+   const uint32_t n       = (argc >= 1 && arg1 > 0 && arg1 <= total) ? arg1 : total;
    uint32_t       pre     = 0;
    uint32_t       new_bad = 0;
    const uint32_t t0      = HAL_GetTick();
