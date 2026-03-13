@@ -284,12 +284,14 @@
 #define FMC_3RD               0x90U
 #define FMC_4TH               0xA2U
 #define FMC_PAGE_SIZE_BYTES   4096U
-#define FMC_OOB_SIZE_BYTES    256U  
+#define FMC_OOB_SIZE_BYTES    256U
 #define FMC_BLOCK_SIZE_PAGES  64U
 #define FMC_PLANE_SIZE_BLOCKS 1024U
 #define FMC_PLANE_NBR         2U
 #define FMC_SECTOR_SIZE       512U
 #define FMC_SCRATCH_ADDR      0xC0000000U
+#define FMC_DDR_BUF_ADDR      0xC8000000U  /* USB MSC DDR backing store */
+#define FMC_DDR_BUF_SIZE      0x10000000U  /* 256 MB */
 
 #endif
 

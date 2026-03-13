@@ -22,8 +22,14 @@ uint32_t          fmc_block_count(void);  /* returns total pages */
 
 void fmc_erase_all  (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_scan       (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+void fmc_flush      (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+void fmc_load       (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_test_boot  (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_test_write (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_test_read  (int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+
+#ifdef NAND_FLASH
+extern volatile int fmc_flush_active;
+#endif
 
 #endif // FMC_H

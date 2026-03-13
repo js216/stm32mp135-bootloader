@@ -247,6 +247,24 @@ static const struct cmd cmd_list[] = {
      },
 
     {
+     .name         = "fmc_flush",
+     .syntax       = "[n_blocks]",
+     .summary      = "Write DDR buffer to NAND (erase before write; disconnect USB first)",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = fmc_flush,
+     },
+
+    {
+     .name         = "fmc_load",
+     .syntax       = "[n_blocks]",
+     .summary      = "Read NAND into DDR buffer",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = fmc_load,
+     },
+
+    {
      .name         = "fmc_test_boot",
      .syntax       = "",
      .summary      = "Check NAND boot image",

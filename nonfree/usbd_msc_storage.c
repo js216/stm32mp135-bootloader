@@ -13,15 +13,16 @@
 #include "sd.h"
 #include "stm32mp13xx_hal_def.h"
 #include "stm32mp13xx_hal_sd.h"
+#include <string.h>
 
 #define STORAGE_LUN_NBR  1U
 
 #ifdef NAND_FLASH
-   /* One logical block = one NAND page.  fmc_block_count() returns total pages.
-    * SCSI block_size is uint16_t (max 65535), so full NAND blocks (256 KB)
-    * cannot be used; page granularity is the natural fit. */
-#  define STORAGE_BLK_SIZ  ((uint16_t)FMC_PAGE_SIZE_BYTES)
-#  define STORAGE_BLK_NBR  (FMC_PLANE_NBR * FMC_PLANE_SIZE_BLOCKS * FMC_BLOCK_SIZE_PAGES)
+   /* DDR-backed store: USB writes go to DDR; use fmc_flush to commit to NAND.
+    * Standard 512-byte sectors; host tools work without special configuration. */
+#  define STORAGE_BLK_SIZ  512U
+#  define STORAGE_BLK_NBR  (FMC_DDR_BUF_SIZE / STORAGE_BLK_SIZ)
+   static uint8_t * const ddr_buf = (uint8_t *)FMC_DDR_BUF_ADDR;
 #else
 #  define STORAGE_BLK_SIZ  0x200U
 #  define STORAGE_BLK_NBR  0x100000U
@@ -99,20 +100,8 @@ uint8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num,
                             uint16_t *block_size)
 {
    UNUSED(lun);
-
-   *block_size = STORAGE_BLK_SIZ;
-
-#ifdef NAND_FLASH
-      const uint32_t nand_blocks = fmc_block_count();
-      if (nand_blocks == 0U) {
-         /* fmc_init() not yet called or failed */
-         return (uint8_t)-1;
-      }
-      *block_num = nand_blocks;
-#else
-      *block_num = STORAGE_BLK_NBR;
-#endif
-
+   *block_size = (uint16_t)STORAGE_BLK_SIZ;
+   *block_num  = STORAGE_BLK_NBR;
    return 0;
 }
 
@@ -166,16 +155,13 @@ uint8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr,
    (void)lun;
 
 #ifdef NAND_FLASH
-      if (fmc_read_blocks(buf, blk_addr, (uint32_t)blk_len) != HAL_OK) {
-         return USBD_FAIL;
-      }
-      return USBD_OK;
+   memcpy(buf, ddr_buf + blk_addr * STORAGE_BLK_SIZ,
+          (uint32_t)blk_len * STORAGE_BLK_SIZ);
+   return USBD_OK;
 #endif
 
-   /* SD path (unchanged) */
-   if (HAL_SD_ReadBlocks(&sd_handle, buf, blk_addr, blk_len, 3000) != HAL_OK) {
+   if (HAL_SD_ReadBlocks(&sd_handle, buf, blk_addr, blk_len, 3000) != HAL_OK)
       return USBD_FAIL;
-   }
    while (HAL_SD_GetCardState(&sd_handle) != HAL_SD_CARD_TRANSFER)
       ;
    return USBD_OK;
@@ -203,16 +189,15 @@ uint8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr,
    (void)lun;
 
 #ifdef NAND_FLASH
-      if (fmc_write_blocks(buf, blk_addr, (uint32_t)blk_len) != HAL_OK) {
-         return USBD_FAIL;
-      }
-      return USBD_OK;
+   if (fmc_flush_active)
+      return USBD_BUSY;
+   memcpy(ddr_buf + blk_addr * STORAGE_BLK_SIZ, buf,
+          (uint32_t)blk_len * STORAGE_BLK_SIZ);
+   return USBD_OK;
 #endif
 
-   /* SD path (unchanged) */
-   if (HAL_SD_WriteBlocks(&sd_handle, buf, blk_addr, blk_len, 3000) != HAL_OK) {
+   if (HAL_SD_WriteBlocks(&sd_handle, buf, blk_addr, blk_len, 3000) != HAL_OK)
       return USBD_FAIL;
-   }
    while (HAL_SD_GetCardState(&sd_handle) != HAL_SD_CARD_TRANSFER)
       ;
    return USBD_OK;
