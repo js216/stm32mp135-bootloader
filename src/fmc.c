@@ -273,17 +273,7 @@ void fmc_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    }
 
    nand_ready = 1;
-
-   const uint32_t total = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
-   memset(bad, 0, total);
-   uint32_t bad_count = 0;
-   for (uint32_t blk = 0; blk < total; blk++) {
-      if (is_bad_oob(blk)) {
-         bad[blk] = 1;
-         bad_count++;
-      }
-   }
-   my_printf("FMC: %lu bad block(s) found\r\n", bad_count);
+   fmc_scan(0, 0, 0, 0);
 }
 
 /* USB MSC: lba in pages; read_page/write_page used directly because
