@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "board.h"
+#include "cmd.h"
 #include "defaults.h"
 #include "fmc.h"
 #include "nand_pt.h"
@@ -340,6 +341,7 @@ void fmc_erase_all(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
                    blk + 1, n, pre, new_bad);
          print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
          t_print = now;
+         if (cmd_interrupted()) { my_printf("\r\ninterrupted\r\n"); return; }
       }
    }
    const uint32_t elapsed = HAL_GetTick() - t0;
@@ -501,6 +503,7 @@ void fmc_test_write(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
          my_printf("  (%lu errs)  ", errors);
          t_print = now;
+         if (cmd_interrupted()) { my_printf("\r\ninterrupted\r\n"); return; }
       }
    }
    const uint32_t elapsed = HAL_GetTick() - t0;
@@ -539,6 +542,7 @@ void fmc_test_read(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
          my_printf("  (%lu bit errs)  ", bit_errs);
          t_print = now;
+         if (cmd_interrupted()) { my_printf("\r\ninterrupted\r\n"); return; }
       }
    }
    const uint32_t elapsed = HAL_GetTick() - t0;
@@ -647,6 +651,11 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          print_mbs(good_idx * BLOCK_BYTES, now - t0);
          my_printf("  (%lu written, %lu skipped)  ", written, skipped);
          t_print = now;
+         if (cmd_interrupted()) {
+            fmc_flush_active = 0;
+            my_printf("\r\ninterrupted\r\n");
+            return;
+         }
       }
    }
 
@@ -776,6 +785,11 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          print_mbs(good_idx * BLOCK_BYTES, now - t0);
          my_printf("  (%lu rd errs)  ", rd_errs);
          t_print = now;
+         if (cmd_interrupted()) {
+            fmc_flush_active = 0;
+            my_printf("\r\ninterrupted\r\n");
+            return;
+         }
       }
    }
 

@@ -310,6 +310,17 @@ static volatile uint8_t rx_buf[RXBUF_SIZE];
 static volatile uint8_t rx_head = 0;
 static volatile uint8_t rx_tail = 0;
 
+static volatile int interrupt_flag = 0;
+
+int cmd_interrupted(void)
+{
+   if (interrupt_flag) {
+      interrupt_flag = 0;
+      return 1;
+   }
+   return 0;
+}
+
 // cmd buffer
 static char line_buf[CMD_MAX_LEN];
 static size_t line_len = 0;
@@ -338,6 +349,11 @@ void cmd_init(void)
 
 void cmd_take_char(char byte)
 {
+   if (byte == 0x03) {
+      interrupt_flag = 1;
+      my_printf("^C\r\n");
+      return;
+   }
    uint8_t next = (rx_head + 1) % RXBUF_SIZE;
    if (next != rx_tail) {
       rx_buf[rx_head] = byte;

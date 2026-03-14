@@ -16,6 +16,7 @@ void cmd_init(void);
 void cmd_take_char(char byte);
 void cmd_poll(void);
 void cmd_autoboot(void);
+int  cmd_interrupted(void);
 
 void cmd_help(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void cmd_reset(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
