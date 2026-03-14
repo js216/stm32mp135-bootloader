@@ -117,6 +117,67 @@ bootloader is nonsecure only: use the provided patches under `test/linux`.) See
 blog post for a more in-depth explanation on how to put together a complete
 Linux system that runs on the STM32MP135 evaluation board.
 
+### Booting Linux from NAND Flash
+
+When `NAND_FLASH` is defined, the bootloader uses the FMC NAND controller
+instead of the SD card for storage. The NAND is partitioned as follows:
+
+| Block(s) | Label      | Size   | Description                              |
+|----------|------------|--------|------------------------------------------|
+| 0–1      | bootloader | 512 KB | Primary and redundant copies             |
+| 2        | ptable     | 256 KB | Partition table (`nand_pt_t` struct)     |
+| 3        | dtb        | 256 KB | Device tree blob                         |
+| 4–67     | kernel     | 16 MB  | Kernel image (64 blocks reserved)        |
+| 68+      | rootfs     | ~495 MB| UBI/UBIFS root filesystem                |
+
+This layout is fixed: rootfs always starts at block 68 regardless of actual
+kernel size, so MTD partition definitions in the DTB never need updating when
+the kernel changes.
+
+**Building a NAND image** — use `scripts/nandimage.py`:
+
+    python3 scripts/nandimage.py nand.img \
+        --boot  build/main.stm32 \
+        --dtb   linux/arch/arm/boot/dts/board.dtb \
+        --kernel linux/arch/arm/boot/zImage \
+        --rootfs buildroot/output/images/rootfs.ubi
+
+The script prints a layout table and embeds a partition table (block 2) that
+`fmc_flush` reads to know how many blocks to write.
+
+**Flashing** — copy `nand.img` to the USB MSC flash drive exposed by the
+bootloader, then in the serial console:
+
+    > fmc_flush
+
+USB is blocked during the flush. Ctrl-C cancels after the next 2-second
+progress report.
+
+**Booting** — after flashing, `fmc_bload` loads the kernel and DTB from their
+NAND partitions into DDR, then `jump` executes the kernel:
+
+    > fmc_bload
+    > jump
+
+Autoboot does both steps automatically after the key-press timeout.
+
+**Rootfs geometry** — build the UBI image with these parameters (matching the
+MX30LF4G28AD chip):
+
+    PEB size  = 262144  (256 KB)
+    LEB size  = 253952  (256 KB − 2 × 4 KB OOB pages)
+    min I/O   = 4096
+    sub-page  = 4096
+
+In Buildroot:
+
+    BR2_TARGET_ROOTFS_UBI=y
+    BR2_TARGET_ROOTFS_UBI_PEBSIZE=0x40000
+    BR2_TARGET_ROOTFS_UBIFS_LEBSIZE=0x3e000
+    BR2_TARGET_ROOTFS_UBIFS_MINIOSIZE=0x1000
+    BR2_TARGET_ROOTFS_UBI_SUBSIZE=4096
+    BR2_TARGET_ROOTFS_UBI_MAXLEBCNT=1978
+
 ### Configuration Flags
 
 To customize the behavior of the bootloader for a new board or application,
