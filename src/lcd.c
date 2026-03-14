@@ -9,6 +9,9 @@
 
 #include "lcd.h"
 #include "board.h"
+
+#ifdef LCD_DISPLAY
+
 #include "ctp.h"
 #include "irq.h"
 #include "irq_ctrl.h"
@@ -218,5 +221,19 @@ void lcd_color(int argc, uint32_t r, uint32_t g, uint32_t b)
    /* make sure CPU writes reach DDR before LTDC reads */
    L1C_CleanDCacheAll();
 }
+
+#else // LCD_DISPLAY
+
+void lcd_init(void) {}
+void lcd_backlight(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc; (void)arg1; (void)arg2; (void)arg3;
+}
+void lcd_color(int argc, uint32_t r, uint32_t g, uint32_t b)
+{
+   (void)argc; (void)r; (void)g; (void)b;
+}
+
+#endif // LCD_DISPLAY
 
 // end file lcd.c

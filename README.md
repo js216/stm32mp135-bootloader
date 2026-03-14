@@ -140,6 +140,8 @@ to the build command line (or directly to `board.h`):
 - `REG_PRINTOUT` defines a command to print out the register values for `RCC`
   and all `TIMx`, `GPIOx` blocks
 - `ETHERNET` defines a command to send an Ethernet frame
+- `LCD_DISPLAY` enables the LCD and CTP touch controller; when not defined,
+  `lcd_init()` is a no-op and the `backlight`/`color` commands are omitted
 - `NAND_FLASH` changes the USB MSC and bootloading code to use NAND flash (SD
   card is used by default when `NAND_FLASH` not defined)
 

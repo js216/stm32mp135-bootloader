@@ -50,7 +50,9 @@ int main(void)
    mmu_init();
    sd_init();
    fmc_init(0, 0, 0, 0);
+#ifdef LCD_DISPLAY
    lcd_init();
+#endif
    blink();
 
    cmd_init();

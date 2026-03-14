@@ -158,6 +158,7 @@ static const struct cmd cmd_list[] = {
      .handler      = fmc_init,
      },
 
+#ifdef LCD_DISPLAY
     {
      .name         = "backlight",
      .syntax       = "",
@@ -175,6 +176,7 @@ static const struct cmd cmd_list[] = {
      .num_defaults = 0,
      .handler      = lcd_color,
      },
+#endif
 
     {
      .name         = "eth_status",
