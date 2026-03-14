@@ -223,17 +223,7 @@ void lcd_color(int argc, uint32_t r, uint32_t g, uint32_t b)
 }
 
 #else // LCD_DISPLAY
-
-void lcd_init(void) {}
-void lcd_backlight(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
-{
-   (void)argc; (void)arg1; (void)arg2; (void)arg3;
-}
-void lcd_color(int argc, uint32_t r, uint32_t g, uint32_t b)
-{
-   (void)argc; (void)r; (void)g; (void)b;
-}
-
+typedef int lcd_c_not_empty;
 #endif // LCD_DISPLAY
 
 // end file lcd.c
