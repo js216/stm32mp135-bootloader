@@ -83,8 +83,6 @@ def main():
                         help='Kernel image')
     parser.add_argument('--rootfs', metavar='FILE',
                         help='Root filesystem image')
-    parser.add_argument('--recovery', metavar='FILE',
-                        help='Recovery initrd image (cpio.gz); placed after rootfs')
     args = parser.parse_args()
 
     img_path = Path(args.image)
@@ -131,16 +129,6 @@ def main():
             parts.append(('rootfs', BLOCK_ROOTFS, rootfs_blks))
             placements.append((Path(args.rootfs).name, BLOCK_ROOTFS, len(rootfs_data)))
             total_blocks = BLOCK_ROOTFS + rootfs_blks
-
-        # Recovery initrd: placed immediately after rootfs
-        if args.recovery:
-            rec_start = BLOCK_ROOTFS + rootfs_blks
-            rec_data  = Path(args.recovery).read_bytes()
-            write_block(img, rec_start, rec_data)
-            rec_blks  = nblocks(len(rec_data))
-            parts.append(('recovery', rec_start, rec_blks))
-            placements.append((Path(args.recovery).name, rec_start, len(rec_data)))
-            total_blocks = rec_start + rec_blks
 
         # Partition table at block 2 (written last, after total_blocks is known)
         parts.append(('ptable', BLOCK_PT, 1))
