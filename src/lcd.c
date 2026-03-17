@@ -8,9 +8,9 @@
  */
 
 #include "lcd.h"
-#include "board.h"
 
 #ifdef LCD_DISPLAY
+#include "board.h"
 
 #include "ctp.h"
 #include "irq.h"

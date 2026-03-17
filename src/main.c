@@ -8,19 +8,20 @@
  */
 
 #include "board.h"
-#include "boot.h"
 #include "cmd.h"
 #include "ddr.h"
-#include "defaults.h"
 #include "eth.h"
 #include "fmc.h"
-#include "lcd.h"
 #include "sd.h"
 #include "setup.h"
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_gpio.h"
 #include <stdint.h>
+
+#ifdef LCD_DISPLAY
+#include "lcd.h"
+#endif
 
 #ifndef BOOT_TIMEOUT
 #define BOOT_TIMEOUT 3

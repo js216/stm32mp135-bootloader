@@ -223,7 +223,7 @@ static uint32_t lba_to_phys_block(uint32_t good_idx)
 static HAL_StatusTypeDef read_block(uint32_t blk, uint8_t *buf)
 {
    for (uint32_t pg = 0; pg < hnand.Config.BlockSize; pg++)
-      if (read_page(blk, pg, buf + pg * hnand.Config.PageSize) != HAL_OK)
+      if (read_page(blk, pg, buf + (pg * hnand.Config.PageSize)) != HAL_OK)
          return HAL_ERROR;
    return HAL_OK;
 }
@@ -231,22 +231,23 @@ static HAL_StatusTypeDef read_block(uint32_t blk, uint8_t *buf)
 static HAL_StatusTypeDef write_block(uint32_t blk, const uint8_t *buf)
 {
    for (uint32_t pg = 0; pg < hnand.Config.BlockSize; pg++)
-      if (write_page(blk, pg, buf + pg * hnand.Config.PageSize) != HAL_OK)
+      if (write_page(blk, pg, buf + (pg * hnand.Config.PageSize)) != HAL_OK)
          return HAL_ERROR;
    return HAL_OK;
 }
 
 static inline uint32_t le32(const uint8_t *p, uint32_t o)
 {
-   return (uint32_t)p[o] | ((uint32_t)p[o + 1] << 8) |
-          ((uint32_t)p[o + 2] << 16) | ((uint32_t)p[o + 3] << 24);
+   return (uint32_t)p[o] | ((uint32_t)p[o + 1] << 8U) |
+          ((uint32_t)p[o + 2] << 16U) | ((uint32_t)p[o + 3] << 24U);
 }
 
 static inline uint32_t popcount8(uint8_t x)
 {
-   x = x - ((x >> 1U) & 0x55U);
-   x = (x & 0x33U) + ((x >> 2U) & 0x33U);
-   return (uint32_t)((x + (x >> 4U)) & 0x0FU);
+   uint32_t v = (uint32_t)x;
+   v          = v - ((v >> 1U) & 0x55U);
+   v          = (v & 0x33U) + ((v >> 2U) & 0x33U);
+   return (v + (v >> 4U)) & 0x0FU;
 }
 
 static void print_mbs(uint32_t bytes, uint32_t elapsed_ms)
@@ -395,24 +396,25 @@ void fmc_erase_all(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    const uint32_t t0 = HAL_GetTick();
    uint32_t t_print  = t0;
 
-   my_printf("FMC: erasing %lu blocks\r\n", n);
+   my_printf("FMC: erasing %lu blocks\r\n", (unsigned long)n);
    for (uint32_t blk = 0; blk < n; blk++) {
       if (bad[blk]) {
-         my_printf("\rskip %lu (pre-marked bad)\r\n", blk);
+         my_printf("\rskip %lu (pre-marked bad)\r\n", (unsigned long)blk);
          pre++;
          continue;
       }
       if (erase_block(blk) != HAL_OK) {
-         my_printf("\rnewly bad %lu (erase fail)\r\n", blk);
+         my_printf("\rnewly bad %lu (erase fail)\r\n", (unsigned long)blk);
          mark_bad_oob(blk);
          bad[blk] = 1;
          new_bad++;
       }
       const uint32_t now = HAL_GetTick();
       if ((now - t_print) >= 2000U) {
-         my_printf("\rblk %lu/%lu  (%lu pre-bad, %lu new-bad)  ", blk + 1, n,
-                   pre, new_bad);
-         print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
+         my_printf("\rblk %lu/%lu  (%lu pre-bad, %lu new-bad)  ",
+                   (unsigned long)blk + 1UL, (unsigned long)n,
+                   (unsigned long)pre, (unsigned long)new_bad);
+         print_mbs((blk + 1U) * BLOCK_BYTES, now - t0);
          t_print = now;
          if (cmd_interrupted()) {
             my_printf("\r\ninterrupted\r\n");
@@ -421,15 +423,16 @@ void fmc_erase_all(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       }
    }
    const uint32_t elapsed = HAL_GetTick() - t0;
-   my_printf("\r\ndone: %lu pre-marked bad, %lu newly bad, %lu s, avg ", pre,
-             new_bad, elapsed / 1000U);
+   my_printf("\r\ndone: %lu pre-marked bad, %lu newly bad, %lu s, avg ",
+             (unsigned long)pre, (unsigned long)new_bad,
+             (unsigned long)(elapsed / 1000U));
    print_mbs(n * BLOCK_BYTES, elapsed);
    my_printf("\r\n");
 }
 
 static void check_boot_block(uint32_t blk)
 {
-   my_printf("boot check: block %lu\r\n", blk);
+   my_printf("boot check: block %lu\r\n", (unsigned long)blk);
    if (read_block(blk, buf_a) != HAL_OK) {
       my_printf("  read error\r\n");
       return;
@@ -446,11 +449,12 @@ static void check_boot_block(uint32_t blk)
    const uint32_t image_len = le32(h, 0x4C);
    const uint32_t entry_pt  = le32(h, 0x50);
    const uint32_t load_addr = le32(h, 0x58);
-   const uint8_t major      = (uint8_t)(ver_word >> 16);
-   const uint8_t minor      = (uint8_t)(ver_word >> 8);
+   const uint8_t major      = (uint8_t)(ver_word >> 16U);
+   const uint8_t minor      = (uint8_t)(ver_word >> 8U);
 
    my_printf("  version %u.%u  image_len %lu  entry 0x%08lx  load 0x%08lx\r\n",
-             major, minor, image_len, entry_pt, load_addr);
+             major, minor, (unsigned long)image_len, (unsigned long)entry_pt,
+             (unsigned long)load_addr);
 
    if (image_len == 0) {
       my_printf("  zero image_len\r\n");
@@ -476,7 +480,7 @@ static void check_boot_block(uint32_t blk)
 
    while (remaining > 0) {
       if (cur_blk != blk && read_block(cur_blk, buf_a) != HAL_OK) {
-         my_printf("  read error at block %lu\r\n", cur_blk);
+         my_printf("  read error at block %lu\r\n", (unsigned long)cur_blk);
          return;
       }
       const uint32_t avail = BLOCK_BYTES - byte_off;
@@ -489,10 +493,10 @@ static void check_boot_block(uint32_t blk)
    }
 
    if (computed == checksum)
-      my_printf("  checksum OK (0x%08lx)\r\n", computed);
+      my_printf("  checksum OK (0x%08lx)\r\n", (unsigned long)computed);
    else
       my_printf("  checksum MISMATCH computed 0x%08lx stored 0x%08lx\r\n",
-                computed, checksum);
+                (unsigned long)computed, (unsigned long)checksum);
 }
 
 static void check_partition_table(void)
@@ -539,14 +543,14 @@ static void check_dtb(void)
    }
    /* FDT magic: 0xD00DFEED big-endian */
    const uint8_t *h     = buf_a;
-   const uint32_t magic = ((uint32_t)h[0] << 24) | ((uint32_t)h[1] << 16) |
-                          ((uint32_t)h[2] << 8) | (uint32_t)h[3];
+   const uint32_t magic = ((uint32_t)h[0] << 24U) | ((uint32_t)h[1] << 16U) |
+                          ((uint32_t)h[2] << 8U) | (uint32_t)h[3];
    if (magic != 0xD00DFEEDU) {
       my_printf("  bad FDT magic: 0x%08lx\r\n", (unsigned long)magic);
       return;
    }
-   const uint32_t totalsize = ((uint32_t)h[4] << 24) | ((uint32_t)h[5] << 16) |
-                              ((uint32_t)h[6] << 8) | (uint32_t)h[7];
+   const uint32_t totalsize = ((uint32_t)h[4] << 24U) | ((uint32_t)h[5] << 16U) |
+                              ((uint32_t)h[6] << 8U) | (uint32_t)h[7];
    my_printf("  FDT magic OK  totalsize %lu bytes\r\n",
              (unsigned long)totalsize);
 }
@@ -584,16 +588,16 @@ void fmc_test_write(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    const uint32_t t0 = HAL_GetTick();
    uint32_t t_print  = t0;
 
-   my_printf("FMC write: %lu blocks\r\n", n);
+   my_printf("FMC write: %lu blocks\r\n", (unsigned long)n);
    for (uint32_t blk = 0; blk < n; blk++) {
       prng_fill(buf_a, BLOCK_BYTES, &prng);
       if (write_block(blk, buf_a) != HAL_OK)
          errors++;
       const uint32_t now = HAL_GetTick();
       if ((now - t_print) >= 2000U) {
-         my_printf("\rblk %lu/%lu  ", blk + 1, n);
+         my_printf("\rblk %lu/%lu  ", (unsigned long)blk + 1UL, (unsigned long)n);
          print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
-         my_printf("  (%lu errs)  ", errors);
+         my_printf("  (%lu errs)  ", (unsigned long)errors);
          t_print = now;
          if (cmd_interrupted()) {
             my_printf("\r\ninterrupted\r\n");
@@ -602,7 +606,8 @@ void fmc_test_write(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       }
    }
    const uint32_t elapsed = HAL_GetTick() - t0;
-   my_printf("\r\ndone: %lu errs, %lu s, avg ", errors, elapsed / 1000U);
+   my_printf("\r\ndone: %lu errs, %lu s, avg ", (unsigned long)errors,
+             (unsigned long)(elapsed / 1000U));
    print_mbs(n * BLOCK_BYTES, elapsed);
    my_printf("\r\n");
 }
@@ -625,7 +630,7 @@ void fmc_test_read(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    const uint32_t t0 = HAL_GetTick();
    uint32_t t_print  = t0;
 
-   my_printf("FMC read: %lu blocks\r\n", n);
+   my_printf("FMC read: %lu blocks\r\n", (unsigned long)n);
    for (uint32_t blk = 0; blk < n; blk++) {
       prng_fill(buf_a, BLOCK_BYTES, &prng);
       if (read_block(blk, buf_b) != HAL_OK) {
@@ -639,9 +644,9 @@ void fmc_test_read(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       }
       const uint32_t now = HAL_GetTick();
       if ((now - t_print) >= 2000U) {
-         my_printf("\rblk %lu/%lu  ", blk + 1, n);
+         my_printf("\rblk %lu/%lu  ", (unsigned long)blk + 1UL, (unsigned long)n);
          print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
-         my_printf("  (%lu bit errs)  ", bit_errs);
+         my_printf("  (%lu bit errs)  ", (unsigned long)bit_errs);
          t_print = now;
          if (cmd_interrupted()) {
             my_printf("\r\ninterrupted\r\n");
@@ -651,7 +656,8 @@ void fmc_test_read(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    }
    const uint32_t elapsed = HAL_GetTick() - t0;
    my_printf("\r\ndone: %lu rd errs, %lu bit errs (post-ECC), %lu s, avg ",
-             rd_errs, bit_errs, elapsed / 1000U);
+             (unsigned long)rd_errs, (unsigned long)bit_errs,
+             (unsigned long)(elapsed / 1000U));
    print_mbs(n * BLOCK_BYTES, elapsed);
    my_printf("\r\n");
 }
@@ -673,11 +679,12 @@ void fmc_scan(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       const int b = is_bad_oob(blk);
       bad[blk]    = (uint8_t)b;
       if (b) {
-         my_printf("bad: blk %lu\r\n", blk);
+         my_printf("bad: blk %lu\r\n", (unsigned long)blk);
          count++;
       }
    }
-   my_printf("scan done: %lu bad / %lu total\r\n", count, total);
+   my_printf("scan done: %lu bad / %lu total\r\n", (unsigned long)count,
+             (unsigned long)total);
 }
 
 static uint32_t pt_total_blocks(void)
@@ -696,6 +703,32 @@ static uint32_t pt_total_blocks(void)
    return pt->total_blocks;
 }
 
+/* Flush one good physical block from DDR src to NAND phys.
+ * Returns: 1 = skipped (already matches), 0 = written, -1 = newly bad. */
+static int flush_one_block(uint32_t phys, const uint8_t *src, uint32_t ppb)
+{
+   if (read_block(phys, buf_a) == HAL_OK &&
+       memcmp(buf_a, src, BLOCK_BYTES) == 0)
+      return 1;
+
+   if (erase_block(phys) != HAL_OK) {
+      my_printf("\rnewly bad %lu (flush erase)\r\n", (unsigned long)phys);
+      mark_bad_oob(phys);
+      bad[phys] = 1;
+      return -1;
+   }
+
+   for (uint32_t pg = 0; pg < ppb; pg++) {
+      if (write_page(phys, pg, src + (pg * hnand.Config.PageSize)) != HAL_OK) {
+         my_printf("\rnewly bad %lu (flush write)\r\n", (unsigned long)phys);
+         mark_bad_oob(phys);
+         bad[phys] = 1;
+         return -1;
+      }
+   }
+   return 0;
+}
+
 void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)arg2;
@@ -705,13 +738,17 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       return;
    }
 
-   const uint32_t ppb       = hnand.Config.BlockSize;
-   const uint32_t total     = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
-   const uint32_t max_blks  = FMC_DDR_BUF_SIZE / BLOCK_BYTES;
-   const uint32_t pt_n      = pt_total_blocks();
-   const uint32_t n         = (argc >= 1 && arg1 > 0 && arg1 <= max_blks) ? arg1
-                              : (pt_n > 0 && pt_n <= max_blks)            ? pt_n
-                                                               : max_blks;
+   const uint32_t ppb      = hnand.Config.BlockSize;
+   const uint32_t total    = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
+   const uint32_t max_blks = FMC_DDR_BUF_SIZE / BLOCK_BYTES;
+   const uint32_t pt_n     = pt_total_blocks();
+   uint32_t n = 0U;
+   if (argc >= 1 && arg1 > 0 && arg1 <= max_blks)
+      n = arg1;
+   else if (pt_n > 0 && pt_n <= max_blks)
+      n = pt_n;
+   else
+      n = max_blks;
    const uint8_t *const ddr = (const uint8_t *)FMC_DDR_BUF_ADDR;
 
    fmc_flush_active = 1;
@@ -724,55 +761,29 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    const uint32_t t0 = HAL_GetTick();
    uint32_t t_print  = t0;
 
-   my_printf("FMC flush: %lu blocks\r\n", n);
+   my_printf("FMC flush: %lu blocks\r\n", (unsigned long)n);
 
    while (good_idx < n && phys < total) {
-      if (bad[phys]) {
-         phys++;
-         continue;
-      }
-
-      const uint8_t *const src = ddr + good_idx * BLOCK_BYTES;
-      int advance              = 1;
-
-      /* Skip if NAND block already matches DDR. */
-      int match = (read_block(phys, buf_a) == HAL_OK) &&
-                  (memcmp(buf_a, src, BLOCK_BYTES) == 0);
-
-      if (match) {
-         skipped++;
-      } else if (erase_block(phys) != HAL_OK) {
-         my_printf("\rnewly bad %lu (flush erase)\r\n", phys);
-         mark_bad_oob(phys);
-         bad[phys] = 1;
-         bad_new++;
-         advance = 0;
-      } else {
-         int fail = 0;
-         for (uint32_t pg = 0; pg < ppb && !fail; pg++)
-            if (write_page(phys, pg, src + pg * hnand.Config.PageSize) !=
-                HAL_OK)
-               fail = 1;
-         if (fail) {
-            my_printf("\rnewly bad %lu (flush write)\r\n", phys);
-            mark_bad_oob(phys);
-            bad[phys] = 1;
-            bad_new++;
-            advance = 0;
-         } else {
+      if (!bad[phys]) {
+         const uint8_t *const src = ddr + (good_idx * BLOCK_BYTES);
+         const int result         = flush_one_block(phys, src, ppb);
+         if (result == 1)
+            skipped++;
+         else if (result == 0)
             written++;
-         }
+         else
+            bad_new++;
+         if (result != -1)
+            good_idx++;
       }
-
       phys++;
-      if (advance)
-         good_idx++;
 
       const uint32_t now = HAL_GetTick();
       if ((now - t_print) >= 2000U) {
-         my_printf("\rblk %lu/%lu  ", good_idx, n);
+         my_printf("\rblk %lu/%lu  ", (unsigned long)good_idx, (unsigned long)n);
          print_mbs(good_idx * BLOCK_BYTES, now - t0);
-         my_printf("  (%lu written, %lu skipped)  ", written, skipped);
+         my_printf("  (%lu written, %lu skipped)  ", (unsigned long)written,
+                   (unsigned long)skipped);
          t_print = now;
          if (cmd_interrupted()) {
             fmc_flush_active = 0;
@@ -785,7 +796,8 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    fmc_flush_active       = 0;
    const uint32_t elapsed = HAL_GetTick() - t0;
    my_printf("\r\ndone: %lu written, %lu skipped, %lu new-bad, %lu s, avg ",
-             written, skipped, bad_new, elapsed / 1000U);
+             (unsigned long)written, (unsigned long)skipped,
+             (unsigned long)bad_new, (unsigned long)(elapsed / 1000U));
    print_mbs((written + skipped) * BLOCK_BYTES, elapsed);
    my_printf("\r\n");
 }
@@ -830,9 +842,9 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    const nand_part_t *kern_p = NULL;
    const nand_part_t *dtb_p  = NULL;
    for (uint32_t i = 0; i < pt->num_parts && i < NAND_PT_MAX_PARTS; i++) {
-      if (strncmp(pt->parts[i].name, "kernel", 16) == 0)
+      if (strcmp(pt->parts[i].name, "kernel") == 0)
          kern_p = &pt->parts[i];
-      else if (strncmp(pt->parts[i].name, "dtb", 16) == 0)
+      else if (strcmp(pt->parts[i].name, "dtb") == 0)
          dtb_p = &pt->parts[i];
    }
    if (!kern_p) {
@@ -855,7 +867,7 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          my_printf("bload: DTB block %lu missing\r\n", (unsigned long)i);
          return;
       }
-      if (read_block(phys, dtb_dst + i * BLOCK_BYTES) != HAL_OK) {
+      if (read_block(phys, dtb_dst + (i * BLOCK_BYTES)) != HAL_OK) {
          my_printf("bload: DTB read error blk %lu\r\n", (unsigned long)i);
          return;
       }
@@ -872,7 +884,7 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          my_printf("bload: kernel block %lu missing\r\n", (unsigned long)i);
          return;
       }
-      if (read_block(phys, kern_dst + i * BLOCK_BYTES) != HAL_OK) {
+      if (read_block(phys, kern_dst + (i * BLOCK_BYTES)) != HAL_OK) {
          my_printf("bload: kernel read error blk %lu\r\n", (unsigned long)i);
          return;
       }
@@ -917,7 +929,7 @@ void fmc_bload_recovery(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    const nand_part_t *rec_p = NULL;
    for (uint32_t i = 0; i < pt->num_parts && i < NAND_PT_MAX_PARTS; i++) {
-      if (strncmp(pt->parts[i].name, "recovery", 16) == 0) {
+      if (strcmp(pt->parts[i].name, "recovery") == 0) {
          rec_p = &pt->parts[i];
          break;
       }
@@ -939,7 +951,7 @@ void fmc_bload_recovery(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
                    (unsigned long)i);
          return;
       }
-      if (read_block(phys, initrd_dst + i * BLOCK_BYTES) != HAL_OK) {
+      if (read_block(phys, initrd_dst + (i * BLOCK_BYTES)) != HAL_OK) {
          my_printf("bload_recovery: initrd read error blk %lu\r\n",
                    (unsigned long)i);
          return;
@@ -947,7 +959,7 @@ void fmc_bload_recovery(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    }
 
    const uint32_t initrd_end =
-       DEF_INITRD_ADDR + rec_p->num_blocks * BLOCK_BYTES;
+       DEF_INITRD_ADDR + (rec_p->num_blocks * BLOCK_BYTES);
 #ifdef PARSE_DTB
    if (dtb_patch_initrd(DEF_INITRD_ADDR, initrd_end) != 0)
       return;
@@ -981,7 +993,7 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    const uint32_t t0 = HAL_GetTick();
    uint32_t t_print  = t0;
 
-   my_printf("FMC load: %lu blocks\r\n", n);
+   my_printf("FMC load: %lu blocks\r\n", (unsigned long)n);
 
    while (good_idx < n && phys < total) {
       if (bad[phys]) {
@@ -989,7 +1001,7 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          continue;
       }
 
-      uint8_t *const dst = ddr + good_idx * BLOCK_BYTES;
+      uint8_t *const dst = ddr + (good_idx * BLOCK_BYTES);
       if (read_block(phys, dst) != HAL_OK)
          rd_errs++;
 
@@ -998,9 +1010,9 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
       const uint32_t now = HAL_GetTick();
       if ((now - t_print) >= 2000U) {
-         my_printf("\rblk %lu/%lu  ", good_idx, n);
+         my_printf("\rblk %lu/%lu  ", (unsigned long)good_idx, (unsigned long)n);
          print_mbs(good_idx * BLOCK_BYTES, now - t0);
-         my_printf("  (%lu rd errs)  ", rd_errs);
+         my_printf("  (%lu rd errs)  ", (unsigned long)rd_errs);
          t_print = now;
          if (cmd_interrupted()) {
             fmc_flush_active = 0;
@@ -1012,7 +1024,8 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    fmc_flush_active       = 0;
    const uint32_t elapsed = HAL_GetTick() - t0;
-   my_printf("\r\ndone: %lu rd errs, %lu s, avg ", rd_errs, elapsed / 1000U);
+   my_printf("\r\ndone: %lu rd errs, %lu s, avg ", (unsigned long)rd_errs,
+             (unsigned long)(elapsed / 1000U));
    print_mbs(n * BLOCK_BYTES, elapsed);
    my_printf("\r\n");
 }

@@ -8,7 +8,6 @@
  */
 
 #include "dtb.h"
-#include "board.h"
 
 #ifdef PARSE_DTB
 

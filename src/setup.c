@@ -8,7 +8,6 @@
  */
 
 #include "setup.h"
-#include "board.h"
 #include "cmd.h"
 #include "debug.h"
 #include "irq.h"
@@ -21,6 +20,7 @@
 #include "stm32mp13xx_hal_def.h"
 #include "stm32mp13xx_hal_gpio.h"
 #include "stm32mp13xx_hal_gpio_ex.h"
+#include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_rcc.h"
 #include "stm32mp13xx_hal_rcc_ex.h"
 #include "stm32mp13xx_hal_uart.h"
@@ -432,8 +432,8 @@ void lse_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg2;
    (void)arg3;
 
-   uint32_t tickstart;
-   uint32_t bdcr;
+   uint32_t tickstart = 0U;
+   uint32_t bdcr      = 0U;
 
    my_printf("lse_init: starting\r\n");
 
@@ -455,18 +455,18 @@ void lse_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    /* 2. Dump initial BDCR state                                          */
    /* ------------------------------------------------------------------ */
    bdcr = RCC->BDCR;
-   my_printf("lse_init: BDCR initial = 0x%08lX\r\n", bdcr);
-   my_printf("lse_init:   LSEON    = %lu\r\n", (bdcr >> 0) & 1);
-   my_printf("lse_init:   LSERDY   = %lu\r\n", (bdcr >> 2) & 1);
-   my_printf("lse_init:   LSEBYP   = %lu\r\n", (bdcr >> 3) & 1);
-   my_printf("lse_init:   LSEDRV   = %lu\r\n", (bdcr >> 4) & 3);
-   my_printf("lse_init:   RTCSRC   = %lu\r\n", (bdcr >> 16) & 3);
-   my_printf("lse_init:   RTCCKEN  = %lu\r\n", (bdcr >> 20) & 1);
+   my_printf("lse_init: BDCR initial = 0x%08lX\r\n", (unsigned long)bdcr);
+   my_printf("lse_init:   LSEON    = %lu\r\n", (unsigned long)((bdcr >> 0U) & 1U));
+   my_printf("lse_init:   LSERDY   = %lu\r\n", (unsigned long)((bdcr >> 2U) & 1U));
+   my_printf("lse_init:   LSEBYP   = %lu\r\n", (unsigned long)((bdcr >> 3U) & 1U));
+   my_printf("lse_init:   LSEDRV   = %lu\r\n", (unsigned long)((bdcr >> 4U) & 3U));
+   my_printf("lse_init:   RTCSRC   = %lu\r\n", (unsigned long)((bdcr >> 16U) & 3U));
+   my_printf("lse_init:   RTCCKEN  = %lu\r\n", (unsigned long)((bdcr >> 20U) & 1U));
 
    /* ------------------------------------------------------------------ */
    /* 3. If RTCSRC already set to LSE (01) and LSERDY up, nothing to do   */
    /* ------------------------------------------------------------------ */
-   if (((bdcr >> 16) & 3) == 1 && READ_BIT(bdcr, RCC_BDCR_LSERDY)) {
+   if (((bdcr >> 16U) & 3U) == 1U && READ_BIT(bdcr, RCC_BDCR_LSERDY)) {
       my_printf(
           "lse_init: LSE already running and selected, ensuring gate on\r\n");
       SET_BIT(RCC->BDCR, RCC_BDCR_RTCCKEN);
@@ -478,23 +478,23 @@ void lse_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    /* 4. If RTCSRC is non-zero but not LSE, we must reset backup domain   */
    /*    to change it — this wipes RTC registers, warn loudly             */
    /* ------------------------------------------------------------------ */
-   if (((bdcr >> 16) & 3) != 0 && ((bdcr >> 16) & 3) != 1) {
+   if (((bdcr >> 16U) & 3U) != 0U && ((bdcr >> 16U) & 3U) != 1U) {
       my_printf("lse_init: WARNING - RTCSRC = %lu (not LSE), resetting backup "
                 "domain\r\n",
-                (bdcr >> 16) & 3);
+                (unsigned long)((bdcr >> 16U) & 3U));
       my_printf("lse_init: WARNING - RTC registers will be lost!\r\n");
 
       SET_BIT(RCC->BDCR, RCC_BDCR_VSWRST);
       tickstart = HAL_GetTick();
       while (!READ_BIT(RCC->BDCR, RCC_BDCR_VSWRST)) {
-         if ((HAL_GetTick() - tickstart) > 10) {
+         if ((HAL_GetTick() - tickstart) > 10U) {
             my_printf("lse_init: ERROR - backup domain reset failed\r\n");
             return;
          }
       }
       CLEAR_BIT(RCC->BDCR, RCC_BDCR_VSWRST);
       my_printf("lse_init: backup domain reset done, BDCR = 0x%08lX\r\n",
-                RCC->BDCR);
+                (unsigned long)RCC->BDCR);
    }
 
    /* ------------------------------------------------------------------ */
@@ -514,23 +514,25 @@ void lse_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    while (!READ_BIT(RCC->BDCR, RCC_BDCR_LSERDY)) {
       if ((HAL_GetTick() - tickstart) > LSE_TIMEOUT_VALUE) {
          my_printf("lse_init: ERROR - LSE failed to start after %lu ms\r\n",
-                   HAL_GetTick() - tickstart);
-         my_printf("lse_init: BDCR at timeout = 0x%08lX\r\n", RCC->BDCR);
+                   (unsigned long)(HAL_GetTick() - tickstart));
+         my_printf("lse_init: BDCR at timeout = 0x%08lX\r\n",
+                   (unsigned long)RCC->BDCR);
          my_printf("lse_init: check crystal, load caps, PCB layout\r\n");
          return;
       }
    }
-   my_printf("lse_init: LSERDY after %lu ms\r\n", HAL_GetTick() - tickstart);
+   my_printf("lse_init: LSERDY after %lu ms\r\n",
+             (unsigned long)(HAL_GetTick() - tickstart));
 
    /* ------------------------------------------------------------------ */
    /* 7. Select LSE as RTC clock source (write-once, so guard it)        */
    /* ------------------------------------------------------------------ */
-   if (READ_BIT(RCC->BDCR, RCC_BDCR_RTCSRC) == 0) {
+   if (READ_BIT(RCC->BDCR, RCC_BDCR_RTCSRC) == 0U) {
       MODIFY_REG(RCC->BDCR, RCC_BDCR_RTCSRC, (1U << RCC_BDCR_RTCSRC_Pos));
       my_printf("lse_init: RTCSRC set to LSE (01)\r\n");
    } else {
       my_printf("lse_init: RTCSRC already = %lu, leaving alone\r\n",
-                (RCC->BDCR >> 16) & 3);
+                (unsigned long)((RCC->BDCR >> 16U) & 3U));
    }
 
    /* ------------------------------------------------------------------ */
@@ -543,14 +545,14 @@ void lse_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    /* 9. Final state dump                                                 */
    /* ------------------------------------------------------------------ */
    bdcr = RCC->BDCR;
-   my_printf("lse_init: BDCR final  = 0x%08lX\r\n", bdcr);
-   my_printf("lse_init:   LSEON    = %lu\r\n", (bdcr >> 0) & 1);
-   my_printf("lse_init:   LSERDY   = %lu\r\n", (bdcr >> 2) & 1);
-   my_printf("lse_init:   LSEDRV   = %lu\r\n", (bdcr >> 4) & 3);
-   my_printf("lse_init:   RTCSRC   = %lu\r\n", (bdcr >> 16) & 3);
-   my_printf("lse_init:   RTCCKEN  = %lu\r\n", (bdcr >> 20) & 1);
+   my_printf("lse_init: BDCR final  = 0x%08lX\r\n", (unsigned long)bdcr);
+   my_printf("lse_init:   LSEON    = %lu\r\n", (unsigned long)((bdcr >> 0U) & 1U));
+   my_printf("lse_init:   LSERDY   = %lu\r\n", (unsigned long)((bdcr >> 2U) & 1U));
+   my_printf("lse_init:   LSEDRV   = %lu\r\n", (unsigned long)((bdcr >> 4U) & 3U));
+   my_printf("lse_init:   RTCSRC   = %lu\r\n", (unsigned long)((bdcr >> 16U) & 3U));
+   my_printf("lse_init:   RTCCKEN  = %lu\r\n", (unsigned long)((bdcr >> 20U) & 1U));
 
-   if (((bdcr >> 16) & 3) == 1 && READ_BIT(bdcr, RCC_BDCR_LSERDY) &&
+   if (((bdcr >> 16U) & 3U) == 1U && READ_BIT(bdcr, RCC_BDCR_LSERDY) &&
        READ_BIT(bdcr, RCC_BDCR_RTCCKEN)) {
       my_printf("lse_init: SUCCESS - penguin should be happy\r\n");
    } else {

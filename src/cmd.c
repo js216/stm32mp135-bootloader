@@ -15,18 +15,19 @@
 #include "diag.h"
 #include "eth.h"
 #include "fmc.h"
-#include "lcd.h"
 #include "printf.h"
 #include "sd.h"
 #include "setup.h"
 #include "stm32mp135fxx_ca7.h"
-#include "stm32mp13xx_hal.h"
-#include "usbd_msc_storage.h"
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef LCD_DISPLAY
+#include "lcd.h"
+#endif
 
 #define RXBUF_SIZE   64
 #define CMD_MAX_LEN  32

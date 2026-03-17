@@ -8,10 +8,10 @@
  */
 
 #include "eth.h"
-#include "board.h"
 #include <stdint.h>
 
 #ifdef ETHERNET
+#include "board.h"
 
 #include "irq.h"
 #include "irq_ctrl.h"
