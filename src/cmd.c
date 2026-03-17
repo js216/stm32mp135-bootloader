@@ -10,6 +10,7 @@
 #include "cmd.h"
 #include "board.h"
 #include "boot.h"
+#include "console.h"
 #include "ddr.h"
 #include "defaults.h"
 #include "diag.h"
@@ -29,7 +30,6 @@
 #include "lcd.h"
 #endif
 
-#define RXBUF_SIZE   64
 #define CMD_MAX_LEN  32
 #define HISTORY_SIZE 8
 
@@ -282,22 +282,6 @@ static const struct cmd cmd_list[] = {
 #endif
 };
 
-// character ring buffer
-static volatile uint8_t rx_buf[RXBUF_SIZE];
-static volatile uint8_t rx_head = 0;
-static volatile uint8_t rx_tail = 0;
-
-static volatile int interrupt_flag = 0;
-
-int cmd_interrupted(void)
-{
-   if (interrupt_flag) {
-      interrupt_flag = 0;
-      return 1;
-   }
-   return 0;
-}
-
 // cmd buffer
 static char line_buf[CMD_MAX_LEN];
 static size_t line_len = 0;
@@ -307,7 +291,6 @@ static char history[HISTORY_SIZE][CMD_MAX_LEN];
 static int history_head  = 0;
 static int history_count = 0;
 static int history_index = -1;
-static int key_pressed   = 0;
 
 static void cmd_prompt(void)
 {
@@ -318,25 +301,8 @@ static void cmd_prompt(void)
 
 void cmd_init(void)
 {
-   rx_head = 0;
-   rx_tail = 0;
    my_printf("\r\n");
    cmd_prompt();
-}
-
-void cmd_take_char(char byte)
-{
-   if (byte == 0x03) {
-      interrupt_flag = 1;
-      my_printf("^C\r\n");
-      return;
-   }
-   uint8_t next = (rx_head + 1) % RXBUF_SIZE;
-   if (next != rx_tail) {
-      rx_buf[rx_head] = byte;
-      rx_head         = next;
-   }
-   key_pressed = 1;
 }
 
 static void line_erase(void)
@@ -354,7 +320,7 @@ void cmd_autoboot(void)
       if (boot_ticks % 1000000 == 0)
          my_printf(".");
       cmd_poll();
-      if (key_pressed) {
+      if (console_key_pressed()) {
          my_printf("\n");
          line_erase();
          return;
@@ -581,9 +547,8 @@ static int try_handle_escape(char byte)
 void cmd_poll(void)
 {
    // process all pending chars from ring buffer
-   while (rx_tail != rx_head) {
-      char byte = rx_buf[rx_tail];
-      rx_tail   = (rx_tail + 1) % RXBUF_SIZE;
+   while (!console_rx_empty()) {
+      char byte = console_rx_get();
 
       if (try_handle_escape(byte))
          continue;

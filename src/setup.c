@@ -8,7 +8,7 @@
  */
 
 #include "setup.h"
-#include "cmd.h"
+#include "console.h"
 #include "debug.h"
 #include "irq.h"
 #include "irq_ctrl.h"
@@ -46,7 +46,7 @@ void UART4_IRQHandler(void)
    // take character out, if any
    if ((isr & (USART_ISR_RXNE_RXFNE)) && (cr1 & USART_CR1_RXNEIE)) {
       char byte = (char)(huart4.Instance->RDR & 0xFFU);
-      cmd_take_char(byte);
+      console_push(byte);
    }
 
    // clear other interrupt flags

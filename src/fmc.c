@@ -13,7 +13,7 @@
 
 #ifdef NAND_FLASH
 
-#include "cmd.h"
+#include "console.h"
 #include "defaults.h"
 #include "irq_ctrl.h"
 #include "nand_pt.h"
@@ -413,7 +413,7 @@ void fmc_erase_all(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
                    (unsigned long)pre, (unsigned long)new_bad);
          print_mbs((blk + 1U) * BLOCK_BYTES, now - t0);
          t_print = now;
-         if (cmd_interrupted()) {
+         if (console_interrupted()) {
             my_printf("\r\ninterrupted\r\n");
             return;
          }
@@ -598,7 +598,7 @@ void fmc_test_write(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
          my_printf("  (%lu errs)  ", (unsigned long)errors);
          t_print = now;
-         if (cmd_interrupted()) {
+         if (console_interrupted()) {
             my_printf("\r\ninterrupted\r\n");
             return;
          }
@@ -648,7 +648,7 @@ void fmc_test_read(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
          my_printf("  (%lu bit errs)  ", (unsigned long)bit_errs);
          t_print = now;
-         if (cmd_interrupted()) {
+         if (console_interrupted()) {
             my_printf("\r\ninterrupted\r\n");
             return;
          }
@@ -786,7 +786,7 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          my_printf("  (%lu written, %lu skipped)  ", (unsigned long)written,
                    (unsigned long)skipped);
          t_print = now;
-         if (cmd_interrupted()) {
+         if (console_interrupted()) {
             fmc_flush_active = 0;
             my_printf("\r\ninterrupted\r\n");
             return;
@@ -939,7 +939,7 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          print_mbs(good_idx * BLOCK_BYTES, now - t0);
          my_printf("  (%lu rd errs)  ", (unsigned long)rd_errs);
          t_print = now;
-         if (cmd_interrupted()) {
+         if (console_interrupted()) {
             fmc_flush_active = 0;
             my_printf("\r\ninterrupted\r\n");
             return;
