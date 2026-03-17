@@ -10,6 +10,8 @@
 #ifndef DEFAULTS_H
 #define DEFAULTS_H
 
+#define DEF_DDR_BASE 0xC0000000U
+
 #define DEF_PRINT_LEN 128
 
 #define DEF_EXE_ADDR 0xC0008000

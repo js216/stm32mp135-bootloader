@@ -13,7 +13,7 @@
 #include "defaults.h"
 #include "printf.h"
 
-#if DEF_INITRD_END > 0xE0000000U /* 0xC0000000 + DDR_MEM_SIZE (512 MiB) */
+#if DEF_INITRD_END > DEF_DDR_BASE + DDR_MEM_SIZE
 #error "DEF_INITRD_END exceeds DDR"
 #endif
 #include "stm32mp135fxx_ca7.h"
