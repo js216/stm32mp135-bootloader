@@ -223,7 +223,9 @@ void lcd_color(int argc, uint32_t r, uint32_t g, uint32_t b)
 }
 
 #else // LCD_DISPLAY
+
 typedef int lcd_c_not_empty;
+
 #endif // LCD_DISPLAY
 
 // end file lcd.c
