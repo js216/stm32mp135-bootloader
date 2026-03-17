@@ -601,6 +601,11 @@ void cmd_poll(void)
          // all other characters ignored
       }
    }
+
+   // Ctrl-C at the prompt: clear the flag and re-prompt
+   if (console_interrupted()) {
+      cmd_prompt();
+   }
 }
 
 void cmd_help(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
