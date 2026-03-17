@@ -244,6 +244,15 @@ static const struct cmd cmd_list[] = {
      },
 
     {
+     .name         = "relocate_initrd",
+     .syntax       = "",
+     .summary      = "Copy 32 MiB from USB DDR buffer to DEF_INITRD_ADDR",
+     .defaults     = NULL,
+     .num_defaults = 0,
+     .handler      = ddr_relocate_initrd,
+     },
+
+    {
      .name         = "fmc_bload",
      .syntax       = "",
      .summary      = "Load kernel+DTB from NAND partitions into DDR",

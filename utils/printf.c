@@ -145,15 +145,22 @@ static inline void _out_null(char character, void *buffer, size_t idx,
    (void)maxlen;
 }
 
-// internal _putchar wrapper
-static inline void _out_char(char character, void *buffer, size_t idx,
-                             size_t maxlen)
+// registered output function (set via printf_set_output)
+static printf_output_fn_t _g_output = NULL;
+
+void printf_set_output(printf_output_fn_t fn)
+{
+   _g_output = fn;
+}
+
+// internal output-function wrapper used by printf_() / vprintf_()
+static void _out_char(char character, void *buffer, size_t idx, size_t maxlen)
 {
    (void)buffer;
    (void)idx;
    (void)maxlen;
-   if (character) {
-      _putchar(character);
+   if (character && _g_output) {
+      _g_output(character);
    }
 }
 

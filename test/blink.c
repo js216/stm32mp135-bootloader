@@ -17,7 +17,7 @@
 #define HSE_VALUE 24000000U
 #define HSI_VALUE 64000000U
 
-void _putchar(char ch)
+static void uart_write_char(char ch)
 {
    while (!(UART4->ISR & USART_ISR_TXE))
       ;
@@ -50,12 +50,13 @@ static void blink(void)
    if (now - last_blink >= 500) {
       last_blink = now;
       toggle_pin(GPIOA, 1 << 13U);
-      _putchar('.');
+      my_printf(".");
    }
 }
 
 int main(void)
 {
+   printf_set_output(uart_write_char);
    my_printf("Blinking: ");
    while (1)
       blink();

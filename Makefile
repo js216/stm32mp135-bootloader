@@ -69,7 +69,8 @@ tidy:
 
 cppcheck:
 	cppcheck --enable=all --inconclusive --std=c99 --force --quiet \
-	--inline-suppr --error-exitcode=1 --suppress=missingInclude src util
+	--inline-suppr --error-exitcode=1 --suppress=missingInclude \
+	'--suppress=*:drivers/*' src util drivers
 
 inclusions: $(INC_SRCS) scripts/inclusions.py
 	python3 scripts/inclusions.py $(wildcard src/*.[ch]) > build/incl.dot; \

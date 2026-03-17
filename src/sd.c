@@ -12,7 +12,6 @@
 #include "irq.h"
 #include <stdint.h>
 
-// cppcheck-suppress unusedFunction
 void SDMMC1_IRQHandler(void)
 {
    HAL_SD_IRQHandler(&sd_handle);

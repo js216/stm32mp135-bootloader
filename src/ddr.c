@@ -8,15 +8,22 @@
  */
 
 #include "ddr.h"
+#include "board.h"
 #include "debug.h"
 #include "defaults.h"
 #include "printf.h"
+#include "stm32mp13xx-ddr3-4Gb.h"
+
+#if DEF_INITRD_END > 0xE0000000U /* 0xC0000000 + DDR_MEM_SIZE (512 MiB) */
+#error "DEF_INITRD_END exceeds DDR"
+#endif
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx_hal_ddr.h"
 #include "stm32mp13xx_hal_def.h"
 #include "stm32mp13xx_hal_rcc.h"
 #include <inttypes.h>
 #include <stdint.h>
+#include <string.h>
 
 void ddr_init(void)
 {
@@ -98,6 +105,19 @@ void ddr_print_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       addr = arg2;
 
    ddr_print(addr, n);
+}
+
+void ddr_relocate_initrd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc;
+   (void)arg1;
+   (void)arg2;
+   (void)arg3;
+   my_printf("relocate_initrd: 0x%08lx -> 0x%08lx (%lu B)\r\n",
+             (unsigned long)FMC_DDR_BUF_ADDR, (unsigned long)DEF_INITRD_ADDR,
+             (unsigned long)(DEF_INITRD_END - DEF_INITRD_ADDR));
+   memcpy((void *)DEF_INITRD_ADDR, (const void *)FMC_DDR_BUF_ADDR,
+          DEF_INITRD_END - DEF_INITRD_ADDR);
 }
 
 void ddr_align_test(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)

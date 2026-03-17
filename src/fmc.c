@@ -66,8 +66,6 @@ volatile int fmc_flush_active = 0;
  *   Each FMC_ERROR trigger fires when one sector's BCH ECC is ready.
  *   We read 5 words (BCHDSR0..4), then SourceBlockAddressOffset resets the
  *   source pointer back to BCHDSR0 for the next sector. */
-// cppcheck-suppress unusedFunction  /* HAL callback, called internally by HAL
-// */
 HAL_StatusTypeDef HAL_NAND_Sequencer_MspInit(NAND_HandleTypeDef *hnand_arg)
 {
    (void)hnand_arg;
@@ -812,6 +810,19 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    if (!nand_ready) {
       my_printf("FMC: not initialised\r\n");
       return;
+   }
+
+   /* Relocate initrd from USB DDR buffer if present (gzip magic). */
+   {
+      const uint8_t *h = (const uint8_t *)FMC_DDR_BUF_ADDR;
+      if (h[0] == 0x1fU && h[1] == 0x8bU) {
+         my_printf("bload: initrd at 0x%08lx -> 0x%08lx (%lu B)\r\n",
+                   (unsigned long)FMC_DDR_BUF_ADDR,
+                   (unsigned long)DEF_INITRD_ADDR,
+                   (unsigned long)(DEF_INITRD_END - DEF_INITRD_ADDR));
+         memcpy((void *)DEF_INITRD_ADDR, (const void *)FMC_DDR_BUF_ADDR,
+                DEF_INITRD_END - DEF_INITRD_ADDR);
+      }
    }
 
    /* Read partition table into buf_a. */

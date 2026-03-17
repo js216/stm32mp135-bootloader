@@ -64,7 +64,6 @@ static uint8_t touch_buf[CTP_TOUCH_DATA_LEN];
 static int last_x = -1;
 static int last_y = -1;
 
-// cppcheck-suppress unusedFunction
 void ctp_irqhandler(void)
 {
    // capture the pending flags
@@ -84,7 +83,6 @@ void ctp_irqhandler(void)
       EXTI->RPR1 = rising_pending;
 }
 
-// cppcheck-suppress unusedFunction
 void ctp_unused(void)
 {
 }

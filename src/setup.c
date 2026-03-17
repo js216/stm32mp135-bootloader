@@ -37,7 +37,6 @@
 UART_HandleTypeDef huart4;
 USBD_HandleTypeDef usbd_device;
 
-// cppcheck-suppress unusedFunction
 void UART4_IRQHandler(void)
 {
    uint32_t isr = huart4.Instance->ISR;
@@ -63,8 +62,7 @@ void UART4_IRQHandler(void)
    }
 }
 
-// cppcheck-suppress unusedFunction
-void _putchar(char ch)
+static void uart_write_char(char ch)
 {
    /* Wait until TXE (Transmit Data Register Empty) flag is set */
    while (!(UART4->ISR & USART_ISR_TXE)) {
@@ -390,6 +388,8 @@ void uart4_init(void)
       ERROR("Disable FIFO");
 
    __HAL_UART_ENABLE_IT(&huart4, UART_IT_RXNE);
+
+   printf_set_output(uart_write_char);
 }
 
 void usb_init(void)

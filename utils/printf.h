@@ -41,12 +41,12 @@ extern "C" {
 #endif
 
 /**
- * Output a character to a custom device like UART, used by the printf()
- * function This function is declared here only. You have to write your custom
- * implementation somewhere
- * \param character Character to output
+ * Register the output function used by printf_() / vprintf_().
+ * Call this once (e.g. from uart4_init) before any printf output is needed.
+ * \param fn  Function that writes one character to the output device
  */
-void _putchar(char character);
+typedef void (*printf_output_fn_t)(char);
+void printf_set_output(printf_output_fn_t fn);
 
 /**
  * Tiny printf implementation
