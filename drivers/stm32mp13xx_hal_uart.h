@@ -28,6 +28,9 @@ extern "C" {
 #include "stm32mp13xx_hal_conf.h"
 #include "stm32mp13xx_hal_def.h"
 #include "stm32mp13xx_hal_dma.h"
+#ifdef HAL_MDMA_MODULE_ENABLED
+#include "stm32mp13xx_hal_mdma.h"
+#endif
 #include <stdint.h>
 
 /** @addtogroup STM32MP13xx_HAL_Driver
