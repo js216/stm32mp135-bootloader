@@ -49,7 +49,9 @@ int main(void)
    ddr_init();
    mmu_init();
    sd_init();
+#ifdef NAND_FLASH
    fmc_init(0, 0, 0, 0);
+#endif
 #ifdef LCD_DISPLAY
    lcd_init();
 #endif

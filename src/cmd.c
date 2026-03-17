@@ -149,15 +149,6 @@ static const struct cmd cmd_list[] = {
      .handler      = ddr_align_test,
      },
 
-    {
-     .name         = "fmc_init",
-     .syntax       = "",
-     .summary      = "Initialize FMC NAND controller",
-     .defaults     = NULL,
-     .num_defaults = 0,
-     .handler      = fmc_init,
-     },
-
 #ifdef LCD_DISPLAY
     {
      .name         = "backlight",
@@ -249,10 +240,10 @@ static const struct cmd cmd_list[] = {
      },
 
     {
-     .name         = "fmc_flush",
-     .syntax       = "[n_blocks]",
-     .summary      = "Write DDR buffer to NAND (erase before write; USB blocked during operation)",
-     .defaults     = NULL,
+     .name     = "fmc_flush",
+     .syntax   = "[n_blocks]",
+     .summary  = "Write DDR buffer to NAND (erase before write; USB blocked "
+                    "during operation)",                                           .defaults = NULL,
      .num_defaults = 0,
      .handler      = fmc_flush,
      },
@@ -276,10 +267,10 @@ static const struct cmd cmd_list[] = {
      },
 
     {
-     .name         = "fmc_bload_recovery",
-     .syntax       = "",
-     .summary      = "Load kernel+DTB+recovery-initrd from NAND; patch DTB with initrd location",
-     .defaults     = NULL,
+     .name     = "fmc_bload_recovery",
+     .syntax   = "",
+     .summary  = "Load kernel+DTB+recovery-initrd from NAND; patch DTB with "
+                    "initrd location",                                                           .defaults = NULL,
      .num_defaults = 0,
      .handler      = fmc_bload_recovery,
      },
