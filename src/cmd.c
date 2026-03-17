@@ -253,15 +253,6 @@ static const struct cmd cmd_list[] = {
      },
 
     {
-     .name     = "fmc_bload_recovery",
-     .syntax   = "",
-     .summary  = "Load kernel+DTB+recovery-initrd from NAND; patch DTB with "
-                    "initrd location", .defaults = NULL,
-     .num_defaults = 0,
-     .handler      = fmc_bload_recovery,
-     },
-
-    {
      .name         = "fmc_test_boot",
      .syntax       = "",
      .summary      = "Check NAND boot image",

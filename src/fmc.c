@@ -15,13 +15,8 @@
 
 #include "cmd.h"
 #include "defaults.h"
-#include "nand_pt.h"
-#include <stddef.h>
-#include <string.h>
-#ifdef PARSE_DTB
-#include "dtb.h"
-#endif
 #include "irq_ctrl.h"
+#include "nand_pt.h"
 #include "printf.h"
 #include "prng.h"
 #include "stm32mp135fxx_ca7.h"
@@ -33,6 +28,8 @@
 #include "stm32mp13xx_hal_nand.h"
 #include "stm32mp13xx_hal_rcc.h"
 #include "stm32mp13xx_ll_fmc.h"
+#include <stddef.h>
+#include <string.h>
 
 #define BLOCK_BYTES (FMC_BLOCK_SIZE_PAGES * FMC_PAGE_SIZE_BYTES)
 #define BUF_A_ADDR  (FMC_SCRATCH_ADDR)
@@ -549,8 +546,9 @@ static void check_dtb(void)
       my_printf("  bad FDT magic: 0x%08lx\r\n", (unsigned long)magic);
       return;
    }
-   const uint32_t totalsize = ((uint32_t)h[4] << 24U) | ((uint32_t)h[5] << 16U) |
-                              ((uint32_t)h[6] << 8U) | (uint32_t)h[7];
+   const uint32_t totalsize = ((uint32_t)h[4] << 24U) |
+                              ((uint32_t)h[5] << 16U) | ((uint32_t)h[6] << 8U) |
+                              (uint32_t)h[7];
    my_printf("  FDT magic OK  totalsize %lu bytes\r\n",
              (unsigned long)totalsize);
 }
@@ -595,7 +593,8 @@ void fmc_test_write(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
          errors++;
       const uint32_t now = HAL_GetTick();
       if ((now - t_print) >= 2000U) {
-         my_printf("\rblk %lu/%lu  ", (unsigned long)blk + 1UL, (unsigned long)n);
+         my_printf("\rblk %lu/%lu  ", (unsigned long)blk + 1UL,
+                   (unsigned long)n);
          print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
          my_printf("  (%lu errs)  ", (unsigned long)errors);
          t_print = now;
@@ -644,7 +643,8 @@ void fmc_test_read(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       }
       const uint32_t now = HAL_GetTick();
       if ((now - t_print) >= 2000U) {
-         my_printf("\rblk %lu/%lu  ", (unsigned long)blk + 1UL, (unsigned long)n);
+         my_printf("\rblk %lu/%lu  ", (unsigned long)blk + 1UL,
+                   (unsigned long)n);
          print_mbs((blk + 1) * BLOCK_BYTES, now - t0);
          my_printf("  (%lu bit errs)  ", (unsigned long)bit_errs);
          t_print = now;
@@ -742,7 +742,7 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    const uint32_t total    = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
    const uint32_t max_blks = FMC_DDR_BUF_SIZE / BLOCK_BYTES;
    const uint32_t pt_n     = pt_total_blocks();
-   uint32_t n = 0U;
+   uint32_t n              = 0U;
    if (argc >= 1 && arg1 > 0 && arg1 <= max_blks)
       n = arg1;
    else if (pt_n > 0 && pt_n <= max_blks)
@@ -780,7 +780,8 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
       const uint32_t now = HAL_GetTick();
       if ((now - t_print) >= 2000U) {
-         my_printf("\rblk %lu/%lu  ", (unsigned long)good_idx, (unsigned long)n);
+         my_printf("\rblk %lu/%lu  ", (unsigned long)good_idx,
+                   (unsigned long)n);
          print_mbs(good_idx * BLOCK_BYTES, now - t0);
          my_printf("  (%lu written, %lu skipped)  ", (unsigned long)written,
                    (unsigned long)skipped);
@@ -893,83 +894,6 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    my_printf("bload: done\r\n");
 }
 
-/* Load kernel + DTB from their NAND partitions (via fmc_bload), then load the
- * "recovery" partition to DEF_INITRD_ADDR and patch the DTB /chosen node with
- * linux,initrd-start / linux,initrd-end.  After this returns, type 'jump' to
- * boot.  The DTB source must already contain placeholder initrd properties. */
-void fmc_bload_recovery(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
-{
-   (void)argc;
-   (void)arg1;
-   (void)arg2;
-   (void)arg3;
-   if (!nand_ready) {
-      my_printf("FMC: not initialised\r\n");
-      return;
-   }
-
-   /* Standard kernel + DTB load. */
-   fmc_bload(0, 0, 0, 0);
-
-   /* Re-read the partition table to locate the "recovery" partition. */
-   const uint32_t pt_phys = lba_to_phys_block(NAND_BLOCK_PT);
-   if (pt_phys == UINT32_MAX) {
-      my_printf("bload_recovery: cannot find PT block\r\n");
-      return;
-   }
-   if (read_block(pt_phys, buf_a) != HAL_OK) {
-      my_printf("bload_recovery: PT read error\r\n");
-      return;
-   }
-   const nand_pt_t *pt = (const nand_pt_t *)buf_a;
-   if (pt->magic != NAND_PT_MAGIC) {
-      my_printf("bload_recovery: bad PT magic\r\n");
-      return;
-   }
-
-   const nand_part_t *rec_p = NULL;
-   for (uint32_t i = 0; i < pt->num_parts && i < NAND_PT_MAX_PARTS; i++) {
-      if (strcmp(pt->parts[i].name, "recovery") == 0) {
-         rec_p = &pt->parts[i];
-         break;
-      }
-   }
-   if (!rec_p) {
-      my_printf("bload_recovery: no \"recovery\" partition in PT\r\n");
-      return;
-   }
-
-   /* Load the recovery initrd. */
-   my_printf("bload_recovery: initrd blk %lu+%lu -> 0x%08lx\r\n",
-             (unsigned long)rec_p->start_block,
-             (unsigned long)rec_p->num_blocks, (unsigned long)DEF_INITRD_ADDR);
-   uint8_t *const initrd_dst = (uint8_t *)DEF_INITRD_ADDR;
-   for (uint32_t i = 0; i < rec_p->num_blocks; i++) {
-      const uint32_t phys = lba_to_phys_block(rec_p->start_block + i);
-      if (phys == UINT32_MAX) {
-         my_printf("bload_recovery: initrd block %lu not found\r\n",
-                   (unsigned long)i);
-         return;
-      }
-      if (read_block(phys, initrd_dst + (i * BLOCK_BYTES)) != HAL_OK) {
-         my_printf("bload_recovery: initrd read error blk %lu\r\n",
-                   (unsigned long)i);
-         return;
-      }
-   }
-
-   const uint32_t initrd_end =
-       DEF_INITRD_ADDR + (rec_p->num_blocks * BLOCK_BYTES);
-#ifdef PARSE_DTB
-   if (dtb_patch_initrd(DEF_INITRD_ADDR, initrd_end) != 0)
-      return;
-#else
-   (void)initrd_end;
-#endif
-
-   my_printf("bload_recovery: ready — type 'jump' to boot\r\n");
-}
-
 void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)arg2;
@@ -1010,7 +934,8 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
       const uint32_t now = HAL_GetTick();
       if ((now - t_print) >= 2000U) {
-         my_printf("\rblk %lu/%lu  ", (unsigned long)good_idx, (unsigned long)n);
+         my_printf("\rblk %lu/%lu  ", (unsigned long)good_idx,
+                   (unsigned long)n);
          print_mbs(good_idx * BLOCK_BYTES, now - t0);
          my_printf("  (%lu rd errs)  ", (unsigned long)rd_errs);
          t_print = now;

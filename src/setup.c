@@ -17,10 +17,10 @@
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx.h"
 #include "stm32mp13xx_disco_stpmic1.h"
+#include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_def.h"
 #include "stm32mp13xx_hal_gpio.h"
 #include "stm32mp13xx_hal_gpio_ex.h"
-#include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_rcc.h"
 #include "stm32mp13xx_hal_rcc_ex.h"
 #include "stm32mp13xx_hal_uart.h"
@@ -456,12 +456,18 @@ void lse_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    /* ------------------------------------------------------------------ */
    bdcr = RCC->BDCR;
    my_printf("lse_init: BDCR initial = 0x%08lX\r\n", (unsigned long)bdcr);
-   my_printf("lse_init:   LSEON    = %lu\r\n", (unsigned long)((bdcr >> 0U) & 1U));
-   my_printf("lse_init:   LSERDY   = %lu\r\n", (unsigned long)((bdcr >> 2U) & 1U));
-   my_printf("lse_init:   LSEBYP   = %lu\r\n", (unsigned long)((bdcr >> 3U) & 1U));
-   my_printf("lse_init:   LSEDRV   = %lu\r\n", (unsigned long)((bdcr >> 4U) & 3U));
-   my_printf("lse_init:   RTCSRC   = %lu\r\n", (unsigned long)((bdcr >> 16U) & 3U));
-   my_printf("lse_init:   RTCCKEN  = %lu\r\n", (unsigned long)((bdcr >> 20U) & 1U));
+   my_printf("lse_init:   LSEON    = %lu\r\n",
+             (unsigned long)((bdcr >> 0U) & 1U));
+   my_printf("lse_init:   LSERDY   = %lu\r\n",
+             (unsigned long)((bdcr >> 2U) & 1U));
+   my_printf("lse_init:   LSEBYP   = %lu\r\n",
+             (unsigned long)((bdcr >> 3U) & 1U));
+   my_printf("lse_init:   LSEDRV   = %lu\r\n",
+             (unsigned long)((bdcr >> 4U) & 3U));
+   my_printf("lse_init:   RTCSRC   = %lu\r\n",
+             (unsigned long)((bdcr >> 16U) & 3U));
+   my_printf("lse_init:   RTCCKEN  = %lu\r\n",
+             (unsigned long)((bdcr >> 20U) & 1U));
 
    /* ------------------------------------------------------------------ */
    /* 3. If RTCSRC already set to LSE (01) and LSERDY up, nothing to do   */
@@ -546,11 +552,16 @@ void lse_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    /* ------------------------------------------------------------------ */
    bdcr = RCC->BDCR;
    my_printf("lse_init: BDCR final  = 0x%08lX\r\n", (unsigned long)bdcr);
-   my_printf("lse_init:   LSEON    = %lu\r\n", (unsigned long)((bdcr >> 0U) & 1U));
-   my_printf("lse_init:   LSERDY   = %lu\r\n", (unsigned long)((bdcr >> 2U) & 1U));
-   my_printf("lse_init:   LSEDRV   = %lu\r\n", (unsigned long)((bdcr >> 4U) & 3U));
-   my_printf("lse_init:   RTCSRC   = %lu\r\n", (unsigned long)((bdcr >> 16U) & 3U));
-   my_printf("lse_init:   RTCCKEN  = %lu\r\n", (unsigned long)((bdcr >> 20U) & 1U));
+   my_printf("lse_init:   LSEON    = %lu\r\n",
+             (unsigned long)((bdcr >> 0U) & 1U));
+   my_printf("lse_init:   LSERDY   = %lu\r\n",
+             (unsigned long)((bdcr >> 2U) & 1U));
+   my_printf("lse_init:   LSEDRV   = %lu\r\n",
+             (unsigned long)((bdcr >> 4U) & 3U));
+   my_printf("lse_init:   RTCSRC   = %lu\r\n",
+             (unsigned long)((bdcr >> 16U) & 3U));
+   my_printf("lse_init:   RTCCKEN  = %lu\r\n",
+             (unsigned long)((bdcr >> 20U) & 1U));
 
    if (((bdcr >> 16U) & 3U) == 1U && READ_BIT(bdcr, RCC_BDCR_LSERDY) &&
        READ_BIT(bdcr, RCC_BDCR_RTCCKEN)) {

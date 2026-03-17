@@ -20,7 +20,6 @@ void fmc_scan(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
-void fmc_bload_recovery(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_test_boot(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_test_write(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_test_read(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
