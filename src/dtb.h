@@ -22,6 +22,8 @@
  */
 int dtb_patch_initrd(uint32_t initrd_start, uint32_t initrd_end);
 
-#endif /* PARSE_DTB */
+#endif // PARSE_DTB
 
-#endif /* DTB_H */
+#endif // DTB_H
+
+// end file dtb.h

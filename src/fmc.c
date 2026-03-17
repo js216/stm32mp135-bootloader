@@ -7,18 +7,20 @@
  * @copyright 2026 Stanford Research Systems, Inc.
  */
 
-#include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 #include "board.h"
-#include "cmd.h"
-#include "dtb.h"
-#include "defaults.h"
 #include "fmc.h"
-#include "nand_pt.h"
 
 #ifdef NAND_FLASH
 
+#include <stddef.h>
+#include <string.h>
+#include "cmd.h"
+#include "defaults.h"
+#include "nand_pt.h"
+#ifdef PARSE_DTB
+#include "dtb.h"
+#endif
 #include "irq_ctrl.h"
 #include "prng.h"
 #include "printf.h"
@@ -908,8 +910,12 @@ void fmc_bload_recovery(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    }
 
    const uint32_t initrd_end = DEF_INITRD_ADDR + rec_p->num_blocks * BLOCK_BYTES;
+#ifdef PARSE_DTB
    if (dtb_patch_initrd(DEF_INITRD_ADDR, initrd_end) != 0)
       return;
+#else
+   (void)initrd_end;
+#endif
 
    my_printf("bload_recovery: ready — type 'jump' to boot\r\n");
 }
@@ -1023,6 +1029,11 @@ void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 }
 
 void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc; (void)arg1; (void)arg2; (void)arg3;
+}
+
+void fmc_bload_recovery(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)argc; (void)arg1; (void)arg2; (void)arg3;
 }

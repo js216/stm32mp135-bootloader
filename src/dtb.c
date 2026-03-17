@@ -124,3 +124,5 @@ int dtb_patch_initrd(uint32_t initrd_start, uint32_t initrd_end)
 
 /* Suppress -Wpedantic empty translation unit warning. */
 typedef int dtb_dummy;
+
+// end file dtb.c
