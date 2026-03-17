@@ -44,23 +44,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#if defined DDR_TYPE_DDR3_4Gb
-#include "stm32mp13xx-ddr3-4Gb.h"
-#elif defined DDR_TYPE_DDR3_8Gb
-#include "stm32mp13xx-ddr3-8Gb.h"
-#elif defined DDR_TYPE_LPDDR2_4Gb
-#include "stm32mp13xx-lpddr2-4Gb.h"
-#elif defined DDR_TYPE_LPDDR3_4Gb
-#include "stm32mp13xx-lpddr3-4Gb.h"
-#else /* DDR_TYPE_DDR3_4Gb */
-#error "no DDR settings defined."
-#error "Please make sure that DDR_TYPE is set within those values:"
-#error "  DDR_TYPE_DDR3_4Gb"
-#error "  DDR_TYPE_DDR3_8Gb"
-#error "  DDR_TYPE_LPDDR2_4Gb"
-#error "  DDR_TYPE_LPDDR3_4Gb"
-#error "Please refer to your HW platform capabilities."
-#endif /* DDR_TYPE_DDR3_4Gb */
+#include "board.h"
 
 /** @addtogroup STM32MP13xx_HAL_Driver
  * @{

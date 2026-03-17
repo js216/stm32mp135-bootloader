@@ -12,7 +12,6 @@
 #include "debug.h"
 #include "defaults.h"
 #include "printf.h"
-#include "stm32mp13xx-ddr3-4Gb.h"
 
 #if DEF_INITRD_END > 0xE0000000U /* 0xC0000000 + DDR_MEM_SIZE (512 MiB) */
 #error "DEF_INITRD_END exceeds DDR"
