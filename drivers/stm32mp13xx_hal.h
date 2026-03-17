@@ -30,6 +30,10 @@ extern "C" {
 #include "stm32mp13xx_hal_def.h"
 #include <stdint.h>
 
+#ifdef HAL_MDMA_MODULE_ENABLED
+#include "stm32mp13xx_hal_mdma.h"
+#endif
+
 /** @addtogroup STM32MP13xx_HAL_Driver
  * @{
  */

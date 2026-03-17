@@ -151,7 +151,9 @@
 #else
 
 #undef REG_PRINTOUT
-#define LCD_DISPLAY
+#undef LCD_DISPLAY
+#define NAND_FLASH
+#define PARSE_DTB
 
 #define USE_MCP23x17 0
 
@@ -280,7 +282,6 @@
 #define ETH_NRST_PORT     GPIOG
 #define ETH_NRST_PIN      GPIO_PIN_11
 
-#define NAND_FLASH
 #define FMC_MAKER             0xC2U
 #define FMC_DEV               0xDCU
 #define FMC_3RD               0x90U

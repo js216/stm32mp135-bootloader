@@ -114,9 +114,9 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_nand.h"
 #include "debug.h"
-#include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_ll_fmc.h"
 #include <assert.h>
 #include <stdbool.h>
@@ -3377,7 +3377,7 @@ HAL_NAND_Sequencer_startTransfer(NAND_HandleTypeDef *hnand, void *Buffer,
    status = HAL_MDMA_Start(hdmaData, srcAddress, dstAddress, size,
                            hnand->EccState.SectorCount);
    if (status != HAL_OK) {
-      hnand->State     = HAL_ERROR;
+      hnand->State     = HAL_NAND_STATE_ERROR;
       hnand->ErrorCode = HAL_NAND_ERROR_DMA;
       return status;
    }
@@ -3393,7 +3393,7 @@ HAL_NAND_Sequencer_startTransfer(NAND_HandleTypeDef *hnand, void *Buffer,
       status     = HAL_MDMA_Start(hdmaEcc, srcAddress, dstAddress, size,
                                   hnand->EccState.SectorCount);
       if (status != HAL_OK) {
-         hnand->State     = HAL_ERROR;
+         hnand->State     = HAL_NAND_STATE_ERROR;
          hnand->ErrorCode = HAL_NAND_ERROR_DMA;
          return status;
       }

@@ -205,6 +205,9 @@ to the build command line (or directly to `board.h`):
   `lcd_init()` is a no-op and the `backlight`/`color` commands are omitted
 - `NAND_FLASH` changes the USB MSC and bootloading code to use NAND flash (SD
   card is used by default when `NAND_FLASH` not defined)
+- `PARSE_DTB` enables in-memory DTB patching (`dtb.c`); required for
+  `fmc_bload_recovery` to set `linux,initrd-start`/`linux,initrd-end` in
+  `/chosen` before booting a recovery initrd
 
 Other features can be disabled just by removing them from the `main()` function:
 

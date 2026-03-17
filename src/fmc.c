@@ -12,6 +12,7 @@
 #include <string.h>
 #include "board.h"
 #include "cmd.h"
+#include "dtb.h"
 #include "defaults.h"
 #include "fmc.h"
 #include "nand_pt.h"
@@ -26,6 +27,7 @@
 #include "stm32mp13xx_hal_def.h"
 #include "stm32mp13xx_hal_gpio.h"
 #include "stm32mp13xx_hal_gpio_ex.h"
+#include "stm32mp13xx_hal_mdma.h"
 #include "stm32mp13xx_hal_nand.h"
 #include "stm32mp13xx_hal_rcc.h"
 #include "stm32mp13xx_ll_fmc.h"
@@ -38,6 +40,14 @@
 static NAND_HandleTypeDef hnand;
 static int                nand_ready = 0;
 
+/* MDMA channels and ECC buffer for the FMC sequencer.
+ * Sectors per page = PAGE/SECTOR = 4096/512 = 8; BCH-8 needs 5 words per sector. */
+#define ECC_BUF_WORDS  ((FMC_PAGE_SIZE_BYTES / FMC_SECTOR_SIZE) * 5U)
+static MDMA_HandleTypeDef hmdma_rd;   /* NAND → DDR  (data)   */
+static MDMA_HandleTypeDef hmdma_wr;   /* DDR  → NAND (data)   */
+static MDMA_HandleTypeDef hmdma_ecc;  /* BCH DSR registers → DDR (ECC read) */
+static uint32_t           ecc_buf[ECC_BUF_WORDS];
+
 /* Two DDR scratch buffers, each one full NAND block (256 KB). */
 static uint8_t * const buf_a = (uint8_t *)BUF_A_ADDR;
 static uint8_t * const buf_b = (uint8_t *)BUF_B_ADDR;
@@ -46,6 +56,72 @@ static uint8_t * const buf_b = (uint8_t *)BUF_B_ADDR;
 static uint8_t bad[FMC_PLANE_NBR * FMC_PLANE_SIZE_BLOCKS];
 
 volatile int fmc_flush_active = 0;
+
+/* Override the weak MspInit to configure the three MDMA channels needed by
+ * the FMC NAND sequencer.
+ *
+ * HdmaRead  (MDMA_Channel0): FMC NAND data FIFO → DDR, one sector per trigger.
+ * HdmaWrite (MDMA_Channel1): DDR → FMC NAND data FIFO, one sector per trigger.
+ * HdmaEcc   (MDMA_Channel2): FMC BCH DSR registers → DDR ECC buffer.
+ *   Each FMC_ERROR trigger fires when one sector's BCH ECC is ready.
+ *   We read 5 words (BCHDSR0..4), then SourceBlockAddressOffset resets the
+ *   source pointer back to BCHDSR0 for the next sector. */
+HAL_StatusTypeDef HAL_NAND_Sequencer_MspInit(NAND_HandleTypeDef *hnand_arg)
+{
+   (void)hnand_arg;
+
+   /* Common read/write data channel config; only Inc direction differs. */
+   MDMA_InitTypeDef d = {
+      .Request                  = MDMA_REQUEST_FMC_DATA,
+      .TransferTriggerMode      = MDMA_BLOCK_TRANSFER,
+      .Priority                 = MDMA_PRIORITY_HIGH,
+      .SecureMode               = MDMA_SECURE_MODE_DISABLE,
+      .Endianness               = MDMA_LITTLE_ENDIANNESS_PRESERVE,
+      .SourceDataSize           = MDMA_SRC_DATASIZE_WORD,
+      .DestDataSize             = MDMA_DEST_DATASIZE_WORD,
+      .DataAlignment            = MDMA_DATAALIGN_PACKENABLE,
+      .BufferTransferLength     = 128,
+      .SourceBurst              = MDMA_SOURCE_BURST_SINGLE,
+      .DestBurst                = MDMA_DEST_BURST_SINGLE,
+      .SourceBlockAddressOffset = 0,
+      .DestBlockAddressOffset   = 0,
+   };
+
+   /* Read: FMC FIFO (fixed) → DDR (incrementing) */
+   d.SourceInc      = MDMA_SRC_INC_DISABLE;
+   d.DestinationInc = MDMA_DEST_INC_WORD;
+   hmdma_rd.Instance = MDMA_Channel0;
+   hmdma_rd.Init     = d;
+   if (HAL_MDMA_Init(&hmdma_rd) != HAL_OK)
+      return HAL_ERROR;
+
+   /* Write: DDR (incrementing) → FMC FIFO (fixed) */
+   d.SourceInc      = MDMA_SRC_INC_WORD;
+   d.DestinationInc = MDMA_DEST_INC_DISABLE;
+   hmdma_wr.Instance = MDMA_Channel1;
+   hmdma_wr.Init     = d;
+   if (HAL_MDMA_Init(&hmdma_wr) != HAL_OK)
+      return HAL_ERROR;
+
+   /* ECC: BCH DSRs (BCHDSR0..4, incrementing within sector, reset between) */
+   hmdma_ecc.Instance                      = MDMA_Channel2;
+   hmdma_ecc.Init.Request                  = MDMA_REQUEST_FMC_ERROR;
+   hmdma_ecc.Init.TransferTriggerMode      = MDMA_BLOCK_TRANSFER;
+   hmdma_ecc.Init.Priority                 = MDMA_PRIORITY_HIGH;
+   hmdma_ecc.Init.SecureMode               = MDMA_SECURE_MODE_DISABLE;
+   hmdma_ecc.Init.Endianness               = MDMA_LITTLE_ENDIANNESS_PRESERVE;
+   hmdma_ecc.Init.SourceInc                = MDMA_SRC_INC_WORD;
+   hmdma_ecc.Init.DestinationInc           = MDMA_DEST_INC_WORD;
+   hmdma_ecc.Init.SourceDataSize           = MDMA_SRC_DATASIZE_WORD;
+   hmdma_ecc.Init.DestDataSize             = MDMA_DEST_DATASIZE_WORD;
+   hmdma_ecc.Init.DataAlignment            = MDMA_DATAALIGN_RIGHT;
+   hmdma_ecc.Init.BufferTransferLength     = 4;
+   hmdma_ecc.Init.SourceBurst              = MDMA_SOURCE_BURST_SINGLE;
+   hmdma_ecc.Init.DestBurst               = MDMA_DEST_BURST_SINGLE;
+   hmdma_ecc.Init.SourceBlockAddressOffset = -(int32_t)(5U * sizeof(uint32_t));
+   hmdma_ecc.Init.DestBlockAddressOffset   = 0;
+   return HAL_MDMA_Init(&hmdma_ecc);
+}
 
 static inline void setupgpio(GPIO_TypeDef *gpio, GPIO_InitTypeDef *init,
                               uint32_t pin)
@@ -67,18 +143,31 @@ static inline NAND_AddressTypeDef page_addr(uint32_t blk, uint32_t pg)
 static HAL_StatusTypeDef read_page(uint32_t blk, uint32_t pg, uint8_t *buf)
 {
    NAND_AddressTypeDef a = page_addr(blk, pg);
-   uint32_t n;
-   if (HAL_NAND_ECC_Read_Page_8b(&hnand, &a, buf, 1, &n) != HAL_OK)
+   /* Clean + invalidate before DMA so no dirty lines can be written back over
+    * the incoming data, and the CPU sees fresh DDR after the transfer. */
+   L1C_CleanInvalidateDCacheAll();
+   if (HAL_NAND_Sequencer_ECC_Read_Page_8b(&hnand, &a, buf) != HAL_OK)
       return HAL_ERROR;
-   return HAL_OK;
+   HAL_StatusTypeDef r = HAL_NAND_Sequencer_WaitCompletion(&hnand,
+                                            HAL_NAND_DEFAULT_SEQUENCER_TIMEOUT);
+   /* Invalidate again: MDMA has written buf and ecc_buf to DDR; discard any
+    * stale cache lines so the CPU reads the DMA-written data. */
+   L1C_CleanInvalidateDCacheAll();
+   return r;
 }
 
 static HAL_StatusTypeDef write_page(uint32_t blk, uint32_t pg,
                                     const uint8_t *buf)
 {
+   /* Flush buf to DDR before MDMA reads it — avoids writing stale cache
+    * contents (i.e. whatever was in DDR before the CPU filled the buffer). */
+   L1C_CleanDCacheAll();
    NAND_AddressTypeDef a = page_addr(blk, pg);
-   uint32_t n = 0;
-   return HAL_NAND_ECC_Write_Page_8b(&hnand, &a, (uint8_t *)buf, 1, &n);
+   /* Cast: sequencer takes void*; write path does not modify the buffer. */
+   if (HAL_NAND_Sequencer_ECC_Write_Page_8b(&hnand, &a, (uint8_t *)buf) != HAL_OK)
+      return HAL_ERROR;
+   return HAL_NAND_Sequencer_WaitCompletion(&hnand,
+                                            HAL_NAND_DEFAULT_SEQUENCER_TIMEOUT);
 }
 
 static HAL_StatusTypeDef erase_block(uint32_t blk)
@@ -128,9 +217,10 @@ static uint32_t lba_to_phys_block(uint32_t good_idx)
 
 static HAL_StatusTypeDef read_block(uint32_t blk, uint8_t *buf)
 {
-   NAND_AddressTypeDef a = page_addr(blk, 0);
-   uint32_t n;
-   return HAL_NAND_ECC_Read_Page_8b(&hnand, &a, buf, hnand.Config.BlockSize, &n);
+   for (uint32_t pg = 0; pg < hnand.Config.BlockSize; pg++)
+      if (read_page(blk, pg, buf + pg * hnand.Config.PageSize) != HAL_OK)
+         return HAL_ERROR;
+   return HAL_OK;
 }
 
 static HAL_StatusTypeDef write_block(uint32_t blk, const uint8_t *buf)
@@ -239,6 +329,17 @@ void fmc_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    NAND_EccConfigTypeDef ecc = { .Offset = 2 };
    if (HAL_NAND_ECC_Init(&hnand, &ecc) != HAL_OK) {
       my_printf("HAL_NAND_ECC_Init failed\r\n");
+      return;
+   }
+
+   NAND_SequencerConfigTypeDef seq = {
+      .HdmaRead    = &hmdma_rd,
+      .HdmaWrite   = &hmdma_wr,
+      .HdmaReadEcc = &hmdma_ecc,
+      .EccBuffer   = ecc_buf,
+   };
+   if (HAL_NAND_Sequencer_Init(&hnand, &seq) != HAL_OK) {
+      my_printf("HAL_NAND_Sequencer_Init failed\r\n");
       return;
    }
 
@@ -746,6 +847,71 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    }
 
    my_printf("bload: done\r\n");
+}
+
+/* Load kernel + DTB from their NAND partitions (via fmc_bload), then load the
+ * "recovery" partition to DEF_INITRD_ADDR and patch the DTB /chosen node with
+ * linux,initrd-start / linux,initrd-end.  After this returns, type 'jump' to
+ * boot.  The DTB source must already contain placeholder initrd properties. */
+void fmc_bload_recovery(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
+{
+   (void)argc; (void)arg1; (void)arg2; (void)arg3;
+   if (!nand_ready) { my_printf("FMC: not initialised\r\n"); return; }
+
+   /* Standard kernel + DTB load. */
+   fmc_bload(0, 0, 0, 0);
+
+   /* Re-read the partition table to locate the "recovery" partition. */
+   const uint32_t pt_phys = lba_to_phys_block(NAND_BLOCK_PT);
+   if (pt_phys == UINT32_MAX) {
+      my_printf("bload_recovery: cannot find PT block\r\n");
+      return;
+   }
+   if (read_block(pt_phys, buf_a) != HAL_OK) {
+      my_printf("bload_recovery: PT read error\r\n");
+      return;
+   }
+   const nand_pt_t *pt = (const nand_pt_t *)buf_a;
+   if (pt->magic != NAND_PT_MAGIC) {
+      my_printf("bload_recovery: bad PT magic\r\n");
+      return;
+   }
+
+   const nand_part_t *rec_p = NULL;
+   for (uint32_t i = 0; i < pt->num_parts && i < NAND_PT_MAX_PARTS; i++) {
+      if (strncmp(pt->parts[i].name, "recovery", 16) == 0) {
+         rec_p = &pt->parts[i];
+         break;
+      }
+   }
+   if (!rec_p) {
+      my_printf("bload_recovery: no \"recovery\" partition in PT\r\n");
+      return;
+   }
+
+   /* Load the recovery initrd. */
+   my_printf("bload_recovery: initrd blk %lu+%lu -> 0x%08lx\r\n",
+             (unsigned long)rec_p->start_block,
+             (unsigned long)rec_p->num_blocks,
+             (unsigned long)DEF_INITRD_ADDR);
+   uint8_t * const initrd_dst = (uint8_t *)DEF_INITRD_ADDR;
+   for (uint32_t i = 0; i < rec_p->num_blocks; i++) {
+      const uint32_t phys = lba_to_phys_block(rec_p->start_block + i);
+      if (phys == UINT32_MAX) {
+         my_printf("bload_recovery: initrd block %lu not found\r\n", (unsigned long)i);
+         return;
+      }
+      if (read_block(phys, initrd_dst + i * BLOCK_BYTES) != HAL_OK) {
+         my_printf("bload_recovery: initrd read error blk %lu\r\n", (unsigned long)i);
+         return;
+      }
+   }
+
+   const uint32_t initrd_end = DEF_INITRD_ADDR + rec_p->num_blocks * BLOCK_BYTES;
+   if (dtb_patch_initrd(DEF_INITRD_ADDR, initrd_end) != 0)
+      return;
+
+   my_printf("bload_recovery: ready — type 'jump' to boot\r\n");
 }
 
 void fmc_load(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
