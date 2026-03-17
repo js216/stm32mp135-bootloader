@@ -78,7 +78,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"ddr", DEF_PRINT_LEN, 0, DEF_LINUX_ADDR},
-            },                                     .num_defaults = 1,
+            },                                                                                                              .num_defaults = 1,
      .handler      = ddr_print_cmd,
      },
 
@@ -90,7 +90,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"image", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
-            },  .num_defaults = 1,
+            },                                                                           .num_defaults = 1,
      .handler      = load_sd_cmd,
      },
 #endif
@@ -102,7 +102,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"target", 0, 0, DEF_LINUX_ADDR},
-            },                        .num_defaults = 1,
+            },                                                                                                 .num_defaults = 1,
      .handler      = boot_jump,
      },
 
@@ -122,7 +122,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"exe", DEF_EXE_LEN, DEF_EXE_BLK, DEF_EXE_ADDR},
-            },                                     .num_defaults = 1,
+            },                                                                                                              .num_defaults = 1,
      .handler      = cmd_load_one,
      },
 
@@ -135,7 +135,7 @@ static const struct cmd cmd_list[] = {
             (const struct cmd_defaults[]){
                 {"linux", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
                 {"dtb", DEF_DTB_LEN, DEF_DTB_BLK, DEF_DTB_ADDR},
-            },       .num_defaults = 2,
+            },                                                                                .num_defaults = 2,
      .handler      = sd_load_mbr,
      },
 #endif
@@ -243,7 +243,7 @@ static const struct cmd cmd_list[] = {
      .name     = "fmc_flush",
      .syntax   = "[n_blocks]",
      .summary  = "Write DDR buffer to NAND (erase before write; USB blocked "
-                    "during operation)",                                           .defaults = NULL,
+                    "during operation)",                                                     .defaults = NULL,
      .num_defaults = 0,
      .handler      = fmc_flush,
      },
@@ -270,7 +270,7 @@ static const struct cmd cmd_list[] = {
      .name     = "fmc_bload_recovery",
      .syntax   = "",
      .summary  = "Load kernel+DTB+recovery-initrd from NAND; patch DTB with "
-                    "initrd location",                                                           .defaults = NULL,
+                    "initrd location",                           .defaults = NULL,
      .num_defaults = 0,
      .handler      = fmc_bload_recovery,
      },
