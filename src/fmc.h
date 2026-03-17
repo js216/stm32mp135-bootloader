@@ -15,13 +15,6 @@
 
 void fmc_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 
-/* USB MSC interface.  lba and n are in NAND pages (FMC_PAGE_SIZE_BYTES each).
- */
-HAL_StatusTypeDef fmc_read_blocks(uint8_t *buf, uint32_t lba, uint32_t n);
-HAL_StatusTypeDef fmc_write_blocks(const uint8_t *buf, uint32_t lba,
-                                   uint32_t n);
-uint32_t fmc_block_count(void); /* returns total pages */
-
 void fmc_erase_all(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_scan(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);

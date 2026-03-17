@@ -26,7 +26,7 @@ void gic_init(void);
 void mmu_init(void);
 void usb_init(void);
 
-void lse_init(int argc, uint32_t r, uint32_t g, uint32_t b);
+void lse_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 
 #endif // SETUP_H
 

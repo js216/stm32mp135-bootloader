@@ -69,6 +69,8 @@ volatile int fmc_flush_active = 0;
  *   Each FMC_ERROR trigger fires when one sector's BCH ECC is ready.
  *   We read 5 words (BCHDSR0..4), then SourceBlockAddressOffset resets the
  *   source pointer back to BCHDSR0 for the next sector. */
+// cppcheck-suppress unusedFunction  /* HAL callback, called internally by HAL
+// */
 HAL_StatusTypeDef HAL_NAND_Sequencer_MspInit(NAND_HandleTypeDef *hnand_arg)
 {
    (void)hnand_arg;
@@ -373,52 +375,6 @@ void fmc_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    nand_ready = 1;
    fmc_scan(0, 0, 0, 0);
-}
-
-/* USB MSC: lba in pages; read_page/write_page used directly because
- * block-level helpers would read 256 KB per 4 KB USB request. */
-HAL_StatusTypeDef fmc_read_blocks(uint8_t *buf, uint32_t lba, uint32_t n)
-{
-   if (!nand_ready)
-      return HAL_ERROR;
-   const uint32_t ppb = hnand.Config.BlockSize;
-   for (uint32_t i = 0; i < n; i++) {
-      const uint32_t ap   = lba + i;
-      const uint32_t phys = lba_to_phys_block(ap / ppb);
-      if (phys == UINT32_MAX)
-         return HAL_ERROR;
-      if (read_page(phys, ap % ppb, buf + i * hnand.Config.PageSize) != HAL_OK)
-         return HAL_ERROR;
-   }
-   return HAL_OK;
-}
-
-HAL_StatusTypeDef fmc_write_blocks(const uint8_t *buf, uint32_t lba, uint32_t n)
-{
-   if (!nand_ready)
-      return HAL_ERROR;
-   const uint32_t ppb = hnand.Config.BlockSize;
-   for (uint32_t i = 0; i < n; i++) {
-      const uint32_t ap   = lba + i;
-      const uint32_t phys = lba_to_phys_block(ap / ppb);
-      if (phys == UINT32_MAX)
-         return HAL_ERROR;
-      if (write_page(phys, ap % ppb, buf + i * hnand.Config.PageSize) != HAL_OK)
-         return HAL_ERROR;
-   }
-   return HAL_OK;
-}
-
-uint32_t fmc_block_count(void)
-{
-   if (!nand_ready)
-      return 0;
-   const uint32_t total = hnand.Config.PlaneNbr * hnand.Config.PlaneSize;
-   uint32_t good        = 0;
-   for (uint32_t b = 0; b < total; b++)
-      if (!bad[b])
-         good++;
-   return good * hnand.Config.BlockSize;
 }
 
 void fmc_erase_all(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)

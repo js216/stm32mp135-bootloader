@@ -26,8 +26,103 @@
 #include <string.h>
 
 #if (USE_MCP23x17 == 1)
-#include "mcp23x17.h"
-#endif
+#include "stm32mp13xx_hal_i2c.h"
+#include <stdbool.h>
+
+/* MCP23x17 GPIO expander (EVB only).  Folded here because eth.c is its
+ * only caller; keeping it separate caused cross-TU unusedFunction warnings. */
+enum mcp_pin {
+   MCP_PIN_0 = 0,
+   MCP_PIN_1,
+   MCP_PIN_2,
+   MCP_PIN_3,
+   MCP_PIN_4,
+   MCP_PIN_5,
+   MCP_PIN_6,
+   MCP_PIN_7,
+   MCP_PIN_8,
+   MCP_PIN_9,
+   MCP_PIN_10,
+   MCP_PIN_11,
+   MCP_PIN_12,
+   MCP_PIN_13,
+   MCP_PIN_14,
+   MCP_PIN_15,
+};
+
+#define MCP_I2C_ADDR 0x21U
+#define MCP_IODIRA   0x00U
+#define MCP_IODIRB   0x01U
+#define MCP_GPIOA    0x12U
+#define MCP_GPIOB    0x13U
+
+static I2C_HandleTypeDef mcp_hi2c;
+
+static void mcp_init(void)
+{
+   GPIO_InitTypeDef g = {0};
+   g.Mode             = GPIO_MODE_AF_OD;
+   g.Pull             = GPIO_PULLUP;
+   g.Speed            = GPIO_SPEED_FREQ_LOW;
+   g.Alternate        = GPIO_AF5_I2C1;
+   g.Pin              = GPIO_PIN_12;
+   HAL_GPIO_Init(GPIOD, &g);
+   g.Pin = GPIO_PIN_8;
+   HAL_GPIO_Init(GPIOE, &g);
+   __HAL_RCC_I2C1_CLK_ENABLE();
+   /* 100 kHz @ 64 MHz: PRESC=7, SCLL=43, SCLH=35, SDADEL=2, SCLDEL=2 */
+   mcp_hi2c.Instance = I2C1;
+   mcp_hi2c.Init.Timing =
+       (7U << 28U) | (2U << 20U) | (2U << 16U) | (35U << 8U) | 43U;
+   mcp_hi2c.Init.OwnAddress1      = 0;
+   mcp_hi2c.Init.AddressingMode   = I2C_ADDRESSINGMODE_7BIT;
+   mcp_hi2c.Init.DualAddressMode  = I2C_DUALADDRESS_DISABLE;
+   mcp_hi2c.Init.OwnAddress2      = 0;
+   mcp_hi2c.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+   mcp_hi2c.Init.GeneralCallMode  = I2C_GENERALCALL_DISABLE;
+   mcp_hi2c.Init.NoStretchMode    = I2C_NOSTRETCH_DISABLE;
+   if (HAL_I2C_Init(&mcp_hi2c) != HAL_OK)
+      my_printf("mcp_init: HAL_I2C_Init failed\r\n");
+}
+
+static void mcp_set_pin_mode(enum mcp_pin pin, bool is_output)
+{
+   const uint8_t reg = (pin < 8) ? MCP_IODIRA : MCP_IODIRB;
+   const uint8_t bit = (uint8_t)((uint8_t)pin % 8U);
+   uint8_t val       = 0;
+   if (HAL_I2C_Mem_Read(&mcp_hi2c, MCP_I2C_ADDR << 1U, reg,
+                        I2C_MEMADD_SIZE_8BIT, &val, 1, 100) != HAL_OK) {
+      my_printf("mcp_set_pin_mode: read failed\r\n");
+      return;
+   }
+   if (is_output)
+      val &= (uint8_t)~(uint8_t)(1U << bit);
+   else
+      val |= (uint8_t)(1U << bit);
+   if (HAL_I2C_Mem_Write(&mcp_hi2c, MCP_I2C_ADDR << 1U, reg,
+                         I2C_MEMADD_SIZE_8BIT, &val, 1, 100) != HAL_OK)
+      my_printf("mcp_set_pin_mode: write failed\r\n");
+}
+
+static void mcp_pin_write(enum mcp_pin pin, bool is_high)
+{
+   const uint8_t reg = (pin < 8) ? MCP_GPIOA : MCP_GPIOB;
+   const uint8_t bit = (uint8_t)((uint8_t)pin % 8U);
+   uint8_t val       = 0;
+   if (HAL_I2C_Mem_Read(&mcp_hi2c, MCP_I2C_ADDR << 1U, reg,
+                        I2C_MEMADD_SIZE_8BIT, &val, 1, 100) != HAL_OK) {
+      my_printf("mcp_pin_write: read failed\r\n");
+      return;
+   }
+   if (is_high)
+      val |= (uint8_t)(1U << bit);
+   else
+      val &= (uint8_t)~(uint8_t)(1U << bit);
+   if (HAL_I2C_Mem_Write(&mcp_hi2c, MCP_I2C_ADDR << 1U, reg,
+                         I2C_MEMADD_SIZE_8BIT, &val, 1, 100) != HAL_OK)
+      my_printf("mcp_pin_write: write failed\r\n");
+}
+#endif /* USE_MCP23x17 */
 
 #define ETH_MAC_ADDR0  0x00U
 #define ETH_MAC_ADDR1  0x19U
