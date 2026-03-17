@@ -7,10 +7,10 @@
  * @copyright 2025 Stanford Research Systems, Inc.
  */
 
-#include <stdint.h>
 #include "sd.h"
 #include "board.h"
 #include "irq.h"
+#include <stdint.h>
 
 // cppcheck-suppress unusedFunction
 void SDMMC1_IRQHandler(void)
@@ -261,7 +261,6 @@ void sd_load_mbr(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg2;
    (void)arg3;
 }
-
 
 #endif // NAND_FLASH
 

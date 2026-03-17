@@ -141,7 +141,7 @@
 #define FMC_3RD               0x00U
 #define FMC_4TH               0x00U
 #define FMC_PAGE_SIZE_BYTES   4096U
-#define FMC_OOB_SIZE_BYTES    256U  
+#define FMC_OOB_SIZE_BYTES    256U
 #define FMC_BLOCK_SIZE_PAGES  64U
 #define FMC_PLANE_SIZE_BLOCKS 1024U
 #define FMC_PLANE_NBR         2U
@@ -153,7 +153,7 @@
 #undef REG_PRINTOUT
 #undef LCD_DISPLAY
 #define NAND_FLASH
-#define PARSE_DTB
+#undef PARSE_DTB
 
 #define USE_MCP23x17 0
 
@@ -293,8 +293,8 @@
 #define FMC_PLANE_NBR         2U
 #define FMC_SECTOR_SIZE       512U
 #define FMC_SCRATCH_ADDR      0xC0000000U
-#define FMC_DDR_BUF_ADDR      0xC8000000U  /* USB MSC DDR backing store */
-#define FMC_DDR_BUF_SIZE      0x10000000U  /* 256 MB */
+#define FMC_DDR_BUF_ADDR      0xC8000000U /* USB MSC DDR backing store */
+#define FMC_DDR_BUF_SIZE      0x10000000U /* 256 MB */
 
 #endif
 

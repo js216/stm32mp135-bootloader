@@ -15,17 +15,17 @@
 #include "stm32mp13xx_hal_sd.h"
 #include <string.h>
 
-#define STORAGE_LUN_NBR  1U
+#define STORAGE_LUN_NBR 1U
 
 #ifdef NAND_FLASH
-   /* DDR-backed store: USB writes go to DDR; use fmc_flush to commit to NAND.
-    * Standard 512-byte sectors; host tools work without special configuration. */
-#  define STORAGE_BLK_SIZ  512U
-#  define STORAGE_BLK_NBR  (FMC_DDR_BUF_SIZE / STORAGE_BLK_SIZ)
-   static uint8_t * const ddr_buf = (uint8_t *)FMC_DDR_BUF_ADDR;
+/* DDR-backed store: USB writes go to DDR; use fmc_flush to commit to NAND.
+ * Standard 512-byte sectors; host tools work without special configuration. */
+#define STORAGE_BLK_SIZ 512U
+#define STORAGE_BLK_NBR (FMC_DDR_BUF_SIZE / STORAGE_BLK_SIZ)
+static uint8_t *const ddr_buf = (uint8_t *)FMC_DDR_BUF_ADDR;
 #else
-#  define STORAGE_BLK_SIZ  0x200U
-#  define STORAGE_BLK_NBR  0x100000U
+#define STORAGE_BLK_SIZ 0x200U
+#define STORAGE_BLK_NBR 0x100000U
 #endif
 
 /* ---------------------------------------------------------------------------
@@ -46,25 +46,24 @@ uint8_t STORAGE_GetMaxLun(void);
  * SCSI inquiry data
  * ---------------------------------------------------------------------------*/
 uint8_t STORAGE_Inquirydata[] = /* 36 bytes */
-{
-   /* LUN 0 */
-   0x00, 0x80, 0x02, 0x02, (STANDARD_INQUIRY_DATA_LEN - 5),
-   0x00, 0x00, 0x00,
-   'S', 'T', 'M', ' ', ' ', ' ', ' ', ' ', /* Manufacturer : 8 bytes */
-   'P', 'r', 'o', 'd', 'u', 'c', 't', ' ', /* Product      : 16 bytes */
-   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-   '0', '.', '0', '1',                      /* Version      : 4 bytes  */
+    {
+        /* LUN 0 */
+        0x00, 0x80, 0x02, 0x02, (STANDARD_INQUIRY_DATA_LEN - 5),
+        0x00, 0x00, 0x00, 'S',  'T',
+        'M',  ' ',  ' ',  ' ',  ' ',
+        ' ', /* Manufacturer : 8 bytes */
+        'P',  'r',  'o',  'd',  'u',
+        'c',  't',  ' ', /* Product      : 16 bytes */
+        ' ',  ' ',  ' ',  ' ',  ' ',
+        ' ',  ' ',  ' ',  '0',  '.',
+        '0',  '1', /* Version      : 4 bytes  */
 };
 
 USBD_StorageTypeDef USBD_MSC_fops = {
-   STORAGE_Init,
-   STORAGE_GetCapacity,
-   STORAGE_IsReady,
-   STORAGE_IsWriteProtected,
-   STORAGE_Read,
-   STORAGE_Write,
-   STORAGE_GetMaxLun,
-   STORAGE_Inquirydata,
+    STORAGE_Init,      STORAGE_GetCapacity,
+    STORAGE_IsReady,   STORAGE_IsWriteProtected,
+    STORAGE_Read,      STORAGE_Write,
+    STORAGE_GetMaxLun, STORAGE_Inquirydata,
 };
 
 /* ---------------------------------------------------------------------------

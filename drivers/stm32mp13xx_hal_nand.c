@@ -114,9 +114,9 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_nand.h"
 #include "debug.h"
+#include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_ll_fmc.h"
 #include <assert.h>
 #include <stdbool.h>

@@ -10,8 +10,6 @@
 #ifndef DTB_H
 #define DTB_H
 
-#ifdef PARSE_DTB
-
 #include <stdint.h>
 
 /*
@@ -21,8 +19,6 @@
  * Returns 0 on success, -1 if either property was not found.
  */
 int dtb_patch_initrd(uint32_t initrd_start, uint32_t initrd_end);
-
-#endif // PARSE_DTB
 
 #endif // DTB_H
 

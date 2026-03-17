@@ -54,6 +54,9 @@ build/%.o: %.S
 check: format cppcheck tidy inclusions done
 
 format:
+	grep -rlP '\r' --include='*.[chSs]' --include='*.py' --include='*.md' \
+		--include='Makefile' --include='*.ld' --include='*.tsv' . \
+		&& { echo "CRLF line endings found (see above)"; exit 1; } || true
 	clang-format --dry-run -Werror $(wildcard */*.[ch])
 
 tidy:

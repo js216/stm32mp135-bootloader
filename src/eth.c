@@ -7,9 +7,9 @@
  * @copyright 2026 Stanford Research Systems, Inc.
  */
 
-#include <stdint.h>
 #include "eth.h"
 #include "board.h"
+#include <stdint.h>
 
 #ifdef ETHERNET
 
