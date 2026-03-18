@@ -16,6 +16,12 @@
 #if DEF_INITRD_END > DEF_DDR_BASE + DDR_MEM_SIZE
 #error "DEF_INITRD_END exceeds DDR"
 #endif
+#if FMC_DDR_BUF_ADDR + FMC_DDR_BUF_SIZE > DEF_DDR_BASE + DDR_MEM_SIZE
+#error "FMC DDR buffer exceeds DDR"
+#endif
+#if DEF_INITRD_ADDR < FMC_DDR_BUF_ADDR + FMC_DDR_BUF_SIZE
+#error "DEF_INITRD_ADDR overlaps USB MSC DDR buffer"
+#endif
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx_hal_ddr.h"
 #include "stm32mp13xx_hal_def.h"

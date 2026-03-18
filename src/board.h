@@ -10,6 +10,8 @@
 #ifndef BOARD_H
 #define BOARD_H
 
+#include "defaults.h"
+
 #ifdef EVB // STM32MP135F-DK: Discovery kit with STM32MP135F MPU
 
 #undef REG_PRINTOUT
@@ -256,7 +258,7 @@
 #define FMC_PLANE_SIZE_BLOCKS 1024U
 #define FMC_PLANE_NBR         2U
 #define FMC_SECTOR_SIZE       512U
-#define FMC_SCRATCH_ADDR      0xC0000000U
+#define FMC_SCRATCH_ADDR      DEF_DDR_BASE
 
 #else
 
@@ -511,9 +513,7 @@
 #define FMC_PLANE_SIZE_BLOCKS 1024U
 #define FMC_PLANE_NBR         2U
 #define FMC_SECTOR_SIZE       512U
-#define FMC_SCRATCH_ADDR      0xC0000000U
-#define FMC_DDR_BUF_ADDR      0xC8000000U /* USB MSC DDR backing store */
-#define FMC_DDR_BUF_SIZE      0x10000000U /* 256 MB */
+#define FMC_SCRATCH_ADDR      DEF_DDR_BASE
 
 #endif
 
