@@ -2,7 +2,7 @@
 
 /**
  * @file usbd_msc_storage.c
- * @brief USB MSC storage backend — SD card or NAND flash.
+ * @brief USB MSC storage backend -- SD card or NAND flash.
  * @author MCD Application Team
  * @copyright 2015 STMicroelectronics
  */
@@ -139,7 +139,7 @@ uint8_t STORAGE_IsWriteProtected(uint8_t lun)
  * @brief  Reads data from the selected storage backend.
  *
  * NAND path: lba and blk_len must be page-aligned (multiples of
- * sectors_per_page).  If not, USBD_FAIL is returned immediately — the host
+ * sectors_per_page).  If not, USBD_FAIL is returned immediately -- the host
  * is expected to issue aligned requests once it has read the capacity.
  *
  * @param  lun       Logical unit number (unused)
@@ -176,7 +176,7 @@ uint8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr,
  *
  * NAND path: the target region must already be erased (factory-flash usage).
  * ECC is computed and written by fmc_write_blocks().
- * lba and blk_len must be page-aligned — see STORAGE_Read note above.
+ * lba and blk_len must be page-aligned -- see STORAGE_Read note above.
  *
  * @param  lun       Logical unit number (unused)
  * @param  buf       Input buffer

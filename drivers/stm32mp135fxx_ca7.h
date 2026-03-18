@@ -38304,7 +38304,7 @@ typedef struct {
 #define BSEC_DENABLE_CP15SDISABLE_Msk                                          \
    (0x3UL << BSEC_DENABLE_CP15SDISABLE_Pos) /*!< 0x00000180 */
 #define BSEC_DENABLE_CP15SDISABLE                                              \
-   BSEC_DENABLE_CP15SDISABLE_Msk /*!< write access to some secure Cortex®-A7  \
+   BSEC_DENABLE_CP15SDISABLE_Msk /*!< write access to some secure Cortex(R)-A7 \
                                     CP15 registers disable CPDISABLE[0]        \
                                     applies to CPU0. CPDISABLE[1] applies to   \
                                     CPU1 */
@@ -38676,7 +38676,7 @@ typedef struct {
                                divided according to HSIDIV. This function is   \
                                only available when the RDCTLEN = '1'. It is    \
                                not allowed to change this field value when     \
-                               RDCTLEN = '1â. Refer to Delay Control      \
+                               RDCTLEN = '1'. Refer to Delay Control           \
                                (RDCTL) for additional information of the       \
                                programming of the timeout value. ... */
 #define RCC_MP_APRSTCR_RSTTO_0                                                 \
@@ -39594,7 +39594,7 @@ typedef struct {
                                 System on HSE. This bit must be written by a   \
                                 secure agent if the HSE clock is configured as \
                                 secure (i.e. if RCC_SECCFGR.HSESEC=1). This    \
-                                bit is âset onlyâ (disabled by a     \
+                                bit is 'set only' (disabled by a               \
                                 system reset or when the system enters in      \
                                 Standby mode). When HSECSSON is set, the clock \
                                 detector is enabled by hardware when the HSE   \
@@ -40043,7 +40043,7 @@ typedef struct {
 #define RCC_PLL1CR_PLLON                                                       \
    RCC_PLL1CR_PLLON_Msk /*!< PLL1 enable Set and cleared by software to enable \
                            the PLL1. Note that DIVPEN of PLL1 must be set to   \
-                           '0â before setting PLLON to '0â. Please   \
+                           '0' before setting PLLON to '0'. Please             \
                            refer to for details. */
 #define RCC_PLL1CR_PLL1RDY_Pos (1U)
 #define RCC_PLL1CR_PLL1RDY_Msk                                                 \
@@ -40707,8 +40707,8 @@ typedef struct {
    RCC_PLL3CR_PLLON_Msk /*!< PLL3 enable Set and cleared by software to enable \
                            the PLL3. Cleared by hardware when entering a Stop  \
                            mode or Standby. Note that DIVPEN, DIVQEN and       \
-                           DIVREN of PLL3 must be set to '0â before       \
-                           setting PLLON to '0â. refer to for details. */
+                           DIVREN of PLL3 must be set to '0' before            \
+                           setting PLLON to '0'. refer to for details. */
 #define RCC_PLL3CR_PLL3RDY_Pos (1U)
 #define RCC_PLL3CR_PLL3RDY_Msk                                                 \
    (0x1UL << RCC_PLL3CR_PLL3RDY_Pos) /*!< 0x00000002 */
@@ -40809,15 +40809,15 @@ typedef struct {
 #define RCC_PLL3CFGR1_IFRGE_Pos (24U)
 #define RCC_PLL3CFGR1_IFRGE_Msk                                                \
    (0x3UL << RCC_PLL3CFGR1_IFRGE_Pos) /*!< 0x03000000 */
-#define RCC_PLL3CFGR1_IFRGE                                                     \
-   RCC_PLL3CFGR1_IFRGE_Msk /*!< PLL3 input frequency range Written by software  \
-                              to select the proper reference frequency range    \
-                              used for PLL3. x0: The PLL3 input (ref3_ck)       \
-                              clock range frequency is between 4 and 8 MHz      \
-                              (default after reset) x1: The PLL3 input          \
-                              (ref3_ck) clock range frequency is between 8 and  \
-                              16 MHz. Note that if ref3_ck is equal to 8Â MHz, \
-                              it is recommended to set IFRGE = 'x1â */
+#define RCC_PLL3CFGR1_IFRGE                                                    \
+   RCC_PLL3CFGR1_IFRGE_Msk /*!< PLL3 input frequency range Written by software \
+                              to select the proper reference frequency range   \
+                              used for PLL3. x0: The PLL3 input (ref3_ck)      \
+                              clock range frequency is between 4 and 8 MHz     \
+                              (default after reset) x1: The PLL3 input         \
+                              (ref3_ck) clock range frequency is between 8 and \
+                              16 MHz. Note that if ref3_ck is equal to 8 MHz,  \
+                              it is recommended to set IFRGE = 'x1' */
 #define RCC_PLL3CFGR1_IFRGE_0                                                  \
    (0x1UL << RCC_PLL3CFGR1_IFRGE_Pos) /*!< 0x01000000 */
 #define RCC_PLL3CFGR1_IFRGE_1                                                  \
@@ -41059,8 +41059,8 @@ typedef struct {
    RCC_PLL4CR_PLLON_Msk /*!< PLL4 enable Set and cleared by software to enable \
                            the PLL4. Cleared by hardware when entering a Stop  \
                            mode or Standby. Note that DIVPEN, DIVQEN and       \
-                           DIVREN of PLL4 must be set to '0â before       \
-                           setting PLLON to '0â. refer to for details. */
+                           DIVREN of PLL4 must be set to '0' before            \
+                           setting PLLON to '0'. refer to for details. */
 #define RCC_PLL4CR_PLL4RDY_Pos (1U)
 #define RCC_PLL4CR_PLL4RDY_Msk                                                 \
    (0x1UL << RCC_PLL4CR_PLL4RDY_Pos) /*!< 0x00000002 */
@@ -41168,8 +41168,8 @@ typedef struct {
                               clock range frequency is between 4 and 8 MHz     \
                               (default after reset) x1: The PLL4 input         \
                               (ref4_ck) clock range frequency is between 8 and \
-                              16 MHz Note that if ref3_ck is equal to 8Â MHz, \
-                              it is recommended to set IFRGE = 'x1â */
+                              16 MHz Note that if ref3_ck is equal to 8 MHz,   \
+                              it is recommended to set IFRGE = 'x1' */
 #define RCC_PLL4CFGR1_IFRGE_0                                                  \
    (0x1UL << RCC_PLL4CFGR1_IFRGE_Pos) /*!< 0x01000000 */
 #define RCC_PLL4CFGR1_IFRGE_1                                                  \

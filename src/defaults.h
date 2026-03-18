@@ -26,7 +26,7 @@
 #define DEF_DTB_BLK  640 /* starting LBA on SD */
 
 /* USB MSC DDR backing store.  Host writes land here; fmc_flush commits to
- * NAND.  Only active in NAND builds — EVB uses the SD card directly. */
+ * NAND.  Only active in NAND builds -- EVB uses the SD card directly. */
 #define FMC_DDR_BUF_ADDR 0xC8000000U
 #define FMC_DDR_BUF_SIZE 0x10000000U /* 256 MiB */
 

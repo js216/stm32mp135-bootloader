@@ -482,7 +482,7 @@ void lse_init(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    /* ------------------------------------------------------------------ */
    /* 4. If RTCSRC is non-zero but not LSE, we must reset backup domain   */
-   /*    to change it — this wipes RTC registers, warn loudly             */
+   /*    to change it -- this wipes RTC registers, warn loudly             */
    /* ------------------------------------------------------------------ */
    if (((bdcr >> 16U) & 3U) != 0U && ((bdcr >> 16U) & 3U) != 1U) {
       my_printf("lse_init: WARNING - RTCSRC = %lu (not LSE), resetting backup "

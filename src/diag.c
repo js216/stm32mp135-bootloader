@@ -324,20 +324,21 @@ static void actlr_dump(void)
 
    /* Bit 28: DDI */
    if ((actlr & (1U << 28U)) != 0U)
-      my_printf(INFO "DDI (Disable dual issue) = 1 → dual issue disabled\r\n");
+      my_printf(INFO "DDI (Disable dual issue) = 1 -> dual issue disabled\r\n");
    else
       my_printf(
-          INFO "DDI (Disable dual issue) = 0 → dual issue enabled (reset)\r\n");
+          INFO
+          "DDI (Disable dual issue) = 0 -> dual issue enabled (reset)\r\n");
 
    /* Bit 15: DDVM */
    if ((actlr & (1U << 15U)) != 0U)
-      my_printf(INFO "DDVM (Disable DVM) = 1 → DVM disabled\r\n");
+      my_printf(INFO "DDVM (Disable DVM) = 1 -> DVM disabled\r\n");
    else
-      my_printf(INFO "DDVM (Disable DVM) = 0 → DVM enabled (reset)\r\n");
+      my_printf(INFO "DDVM (Disable DVM) = 0 -> DVM enabled (reset)\r\n");
 
    /* Bits 14-13: L1PCTL */
    uint32_t l1pctl = (actlr >> 13U) & 0x3U;
-   my_printf(INFO "L1PCTL (L1 data prefetch control) = 0b%02" PRIX32 " → ",
+   my_printf(INFO "L1PCTL (L1 data prefetch control) = 0b%02" PRIX32 " -> ",
              l1pctl);
    switch (l1pctl) {
       case 0: my_printf("prefetch disabled\r\n"); break;
@@ -349,31 +350,33 @@ static void actlr_dump(void)
 
    /* Bit 12: L1RADIS */
    if ((actlr & (1U << 12U)) != 0U)
-      my_printf(INFO "L1RADIS = 1 → L1 data cache read-allocate disabled\r\n");
+      my_printf(INFO "L1RADIS = 1 -> L1 data cache read-allocate disabled\r\n");
    else
       my_printf(
-          INFO "L1RADIS = 0 → L1 data cache read-allocate enabled (reset)\r\n");
+          INFO
+          "L1RADIS = 0 -> L1 data cache read-allocate enabled (reset)\r\n");
 
    /* Bit 11: L2RADIS */
    if ((actlr & (1U << 11U)) != 0U)
-      my_printf(INFO "L2RADIS = 1 → L2 data cache read-allocate disabled\r\n");
+      my_printf(INFO "L2RADIS = 1 -> L2 data cache read-allocate disabled\r\n");
    else
       my_printf(
-          INFO "L2RADIS = 0 → L2 data cache read-allocate enabled (reset)\r\n");
+          INFO
+          "L2RADIS = 0 -> L2 data cache read-allocate enabled (reset)\r\n");
 
    /* Bit 10: DODMBS */
    if ((actlr & (1U << 10U)) != 0U)
-      my_printf(INFO "DODMBS = 1 → optimized DMB disabled\r\n");
+      my_printf(INFO "DODMBS = 1 -> optimized DMB disabled\r\n");
    else
-      my_printf(INFO "DODMBS = 0 → optimized DMB enabled (reset)\r\n");
+      my_printf(INFO "DODMBS = 0 -> optimized DMB enabled (reset)\r\n");
 
    /* Bit 6: SMP */
    if ((actlr & (1U << 6U)) != 0U)
       my_printf(
           OK
-          "SMP = 1 → coherent requests enabled (correct for multi-core)\r\n");
+          "SMP = 1 -> coherent requests enabled (correct for multi-core)\r\n");
    else
-      my_printf(WARN "SMP = 0 → coherent requests disabled (must be 1 before "
+      my_printf(WARN "SMP = 0 -> coherent requests disabled (must be 1 before "
                      "enabling caches/MMU)\r\n");
 
    /* Bits 31-29, 27-16, 9-7, 5-0: reserved */
@@ -551,9 +554,9 @@ static void dump_tzc(void)
 
    /* GATE_KEEPER interpretation */
    my_printf(INFO "GATE_KEEPER      = 0x%08" PRIX32 "\r\n", gk);
-   my_printf(INFO "  OPENREQ  = %" PRIu32 " → request filter to %s\r\n",
+   my_printf(INFO "  OPENREQ  = %" PRIu32 " -> request filter to %s\r\n",
              gk & 1U, (gk & 1U) ? "close" : "open");
-   my_printf(INFO "  OPENSTAT = %" PRIu32 " → filter is %s\r\n",
+   my_printf(INFO "  OPENSTAT = %" PRIu32 " -> filter is %s\r\n",
              (gk >> 16U) & 1U, ((gk >> 16U) & 1U) ? "closed" : "opened");
 
    /* SPECULATION_CTRL interpretation */
@@ -608,7 +611,7 @@ static void dump_etzpc(void)
    my_printf(INFO "TZMA0_SIZE       = 0x%08" PRIX32 "\r\n", ETZPC->TZMA0_SIZE);
    my_printf(INFO "TZMA1_SIZE       = 0x%08" PRIX32 "\r\n", ETZPC->TZMA1_SIZE);
 
-   /* DECPROT0–DECPROT3: 16 peripherals each, 2-bit fields */
+   /* DECPROT0-DECPROT3: 16 peripherals each, 2-bit fields */
    for (int x = 0; x <= 3; x++) {
       uint32_t reg = (&ETZPC->DECPROT0)[x];
       my_printf(INFO "DECPROT%d = 0x%08" PRIX32 "\r\n", x, reg);
@@ -638,7 +641,7 @@ static void dump_etzpc(void)
       }
    }
 
-   /* DECPROT4–DECPROT5: INFO only */
+   /* DECPROT4-DECPROT5: INFO only */
    my_printf(INFO "DECPROT4         = 0x%08" PRIX32 "\r\n", ETZPC->DECPROT4);
    my_printf(INFO "DECPROT5         = 0x%08" PRIX32 "\r\n", ETZPC->DECPROT5);
 

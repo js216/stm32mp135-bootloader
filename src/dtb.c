@@ -191,7 +191,7 @@ int dtb_patch_initrd(uint32_t initrd_start, uint32_t initrd_end)
 
    if (found < 2) {
       my_printf(
-          "dtb_patch: found %d/2 initrd properties — add them to .dts\r\n",
+          "dtb_patch: found %d/2 initrd properties -- add them to .dts\r\n",
           found);
       return -1;
    }

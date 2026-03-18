@@ -100,7 +100,7 @@ def main():
         placements.append((Path(args.boot).name + ' [0]', BLOCK_BOOT,     len(boot_data)))
         placements.append((Path(args.boot).name + ' [1]', BLOCK_BOOT + 1, len(boot_data)))
 
-        # DTB at block 3 (fixed, even if absent — kernel still starts at 4)
+        # DTB at block 3 (fixed, even if absent -- kernel still starts at 4)
         if args.dtb:
             dtb_data = Path(args.dtb).read_bytes()
             write_block(img, BLOCK_DTB, dtb_data)

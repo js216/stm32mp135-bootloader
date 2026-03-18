@@ -2,7 +2,7 @@
 
 This is a tiny, single-stage USB Mass Storage bootloader for the STM32MP135.
 When the board powers on, it can enumerate as a flash drive on your computer, so
-you can write SD-card images directly with simple tools like dd—no TF-A, U-Boot,
+you can write SD-card images directly with simple tools like dd--no TF-A, U-Boot,
 or complex setup required. Programs can then be loaded and executed immediately,
 making it easy to experiment, modify, or add new functionality without
 navigating a multi-stage boot chain. It works on the [eval
@@ -69,7 +69,7 @@ it from [here](http://www.chrysocome.net/dd)) to write the SD card image:
     dd if=build/sdcard.img of=/dev/sdc # on Linux
     dd if=build/sdcard.img of=\\.\E:   # on Windows
 
-⚠ WARNING: This will erase all data on the target device, so double-check that
+WARNING WARNING: This will erase all data on the target device, so double-check that
 it is the newly-enumerated SD card and contains no important files.
 
 After writing the SD card, open the serial console (115200 baud) and load the
@@ -124,17 +124,17 @@ instead of the SD card for storage. The NAND is partitioned as follows:
 
 | Block(s) | Label      | Size   | Description                              |
 |----------|------------|--------|------------------------------------------|
-| 0–1      | bootloader | 512 KB | Primary and redundant copies             |
+| 0-1      | bootloader | 512 KB | Primary and redundant copies             |
 | 2        | ptable     | 256 KB | Partition table (`nand_pt_t` struct)     |
 | 3        | dtb        | 256 KB | Device tree blob                         |
-| 4–67     | kernel     | 16 MB  | Kernel image (64 blocks reserved)        |
+| 4-67     | kernel     | 16 MB  | Kernel image (64 blocks reserved)        |
 | 68+      | rootfs     | ~495 MB| UBI/UBIFS root filesystem                |
 
 This layout is fixed: rootfs always starts at block 68 regardless of actual
 kernel size, so MTD partition definitions in the DTB never need updating when
 the kernel changes.
 
-**Building a NAND image** — use `scripts/nandimage.py`:
+**Building a NAND image** -- use `scripts/nandimage.py`:
 
     python3 scripts/nandimage.py nand.img \
         --boot  build/main.stm32 \
@@ -145,7 +145,7 @@ the kernel changes.
 The script prints a layout table and embeds a partition table (block 2) that
 `fmc_flush` reads to know how many blocks to write.
 
-**Flashing** — copy `nand.img` to the USB MSC flash drive exposed by the
+**Flashing** -- copy `nand.img` to the USB MSC flash drive exposed by the
 bootloader, then in the serial console:
 
     > fmc_flush
@@ -153,7 +153,7 @@ bootloader, then in the serial console:
 USB is blocked during the flush. Ctrl-C cancels after the next 2-second
 progress report.
 
-**Booting** — after flashing, `fmc_bload` loads the kernel and DTB from their
+**Booting** -- after flashing, `fmc_bload` loads the kernel and DTB from their
 NAND partitions into DDR, then `jump` executes the kernel:
 
     > fmc_bload
@@ -161,11 +161,11 @@ NAND partitions into DDR, then `jump` executes the kernel:
 
 Autoboot does both steps automatically after the key-press timeout.
 
-**Rootfs geometry** — build the UBI image with these parameters (matching the
+**Rootfs geometry** -- build the UBI image with these parameters (matching the
 MX30LF4G28AD chip):
 
     PEB size  = 262144  (256 KB)
-    LEB size  = 253952  (256 KB − 2 × 4 KB OOB pages)
+    LEB size  = 253952  (256 KB - 2 x 4 KB OOB pages)
     min I/O   = 4096
     sub-page  = 4096
 
@@ -249,7 +249,7 @@ require the STM32CubeProgrammer:
 
 ### Contributing
 
-Questions, bug reports, and bring-up notes are welcome—feel free to open a
+Questions, bug reports, and bring-up notes are welcome--feel free to open a
 GitHub issue if something isn't clear or if you run into hardware issues on your
 own STM32MP135 board. Even simple questions help improve the documentation.
 

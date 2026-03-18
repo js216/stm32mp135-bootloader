@@ -44,9 +44,9 @@ static int nand_ready = 0;
  * Sectors per page = PAGE/SECTOR = 4096/512 = 8; BCH-8 needs 5 words per
  * sector. */
 #define ECC_BUF_WORDS ((FMC_PAGE_SIZE_BYTES / FMC_SECTOR_SIZE) * 5U)
-static MDMA_HandleTypeDef hmdma_rd;  /* NAND → DDR  (data)   */
-static MDMA_HandleTypeDef hmdma_wr;  /* DDR  → NAND (data)   */
-static MDMA_HandleTypeDef hmdma_ecc; /* BCH DSR registers → DDR (ECC read) */
+static MDMA_HandleTypeDef hmdma_rd;  /* NAND -> DDR  (data)   */
+static MDMA_HandleTypeDef hmdma_wr;  /* DDR  -> NAND (data)   */
+static MDMA_HandleTypeDef hmdma_ecc; /* BCH DSR registers -> DDR (ECC read) */
 static uint32_t ecc_buf[ECC_BUF_WORDS];
 
 /* Two DDR scratch buffers, each one full NAND block (256 KB). */
@@ -79,9 +79,9 @@ uint32_t fmc_usb_written_bytes(void)
 /* Override the weak MspInit to configure the three MDMA channels needed by
  * the FMC NAND sequencer.
  *
- * HdmaRead  (MDMA_Channel0): FMC NAND data FIFO → DDR, one sector per trigger.
- * HdmaWrite (MDMA_Channel1): DDR → FMC NAND data FIFO, one sector per trigger.
- * HdmaEcc   (MDMA_Channel2): FMC BCH DSR registers → DDR ECC buffer.
+ * HdmaRead  (MDMA_Channel0): FMC NAND data FIFO -> DDR, one sector per trigger.
+ * HdmaWrite (MDMA_Channel1): DDR -> FMC NAND data FIFO, one sector per trigger.
+ * HdmaEcc   (MDMA_Channel2): FMC BCH DSR registers -> DDR ECC buffer.
  *   Each FMC_ERROR trigger fires when one sector's BCH ECC is ready.
  *   We read 5 words (BCHDSR0..4), then SourceBlockAddressOffset resets the
  *   source pointer back to BCHDSR0 for the next sector. */
@@ -106,7 +106,7 @@ HAL_StatusTypeDef HAL_NAND_Sequencer_MspInit(NAND_HandleTypeDef *hnand_arg)
        .DestBlockAddressOffset   = 0,
    };
 
-   /* Read: FMC FIFO (fixed) → DDR (incrementing) */
+   /* Read: FMC FIFO (fixed) -> DDR (incrementing) */
    d.SourceInc       = MDMA_SRC_INC_DISABLE;
    d.DestinationInc  = MDMA_DEST_INC_WORD;
    hmdma_rd.Instance = MDMA_Channel0;
@@ -114,7 +114,7 @@ HAL_StatusTypeDef HAL_NAND_Sequencer_MspInit(NAND_HandleTypeDef *hnand_arg)
    if (HAL_MDMA_Init(&hmdma_rd) != HAL_OK)
       return HAL_ERROR;
 
-   /* Write: DDR (incrementing) → FMC FIFO (fixed) */
+   /* Write: DDR (incrementing) -> FMC FIFO (fixed) */
    d.SourceInc       = MDMA_SRC_INC_WORD;
    d.DestinationInc  = MDMA_DEST_INC_DISABLE;
    hmdma_wr.Instance = MDMA_Channel1;
@@ -177,7 +177,7 @@ static HAL_StatusTypeDef read_page(uint32_t blk, uint32_t pg, uint8_t *buf)
 static HAL_StatusTypeDef write_page(uint32_t blk, uint32_t pg,
                                     const uint8_t *buf)
 {
-   /* Flush buf to DDR before MDMA reads it — avoids writing stale cache
+   /* Flush buf to DDR before MDMA reads it -- avoids writing stale cache
     * contents (i.e. whatever was in DDR before the CPU filled the buffer). */
    L1C_CleanDCacheAll();
    NAND_AddressTypeDef a = page_addr(blk, pg);
@@ -844,7 +844,7 @@ static int load_dtb(const nand_part_t *dtb_p, int have_initrd,
                     uint32_t initrd_end)
 {
    if (!dtb_p) {
-      my_printf("bload: no dtb partition — booting without DTB\r\n");
+      my_printf("bload: no dtb partition -- booting without DTB\r\n");
       return 0;
    }
    my_printf("bload: DTB  blk %lu+%lu -> 0x%08lx\r\n",

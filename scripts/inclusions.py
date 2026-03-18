@@ -53,7 +53,7 @@ def build_graph(files):
             elif Path(inc).name in filename_map:
                 tgt_node = node_name(filename_map[Path(inc).name])
             else:
-                continue  # skip includes we don’t have
+                continue  # skip includes we don't have
             if tgt_node != src_node:  # avoid self-loop
                 graph[src_node].add(tgt_node)
     return graph
