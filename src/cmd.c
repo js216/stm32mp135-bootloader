@@ -17,7 +17,6 @@
 #include "eth.h"
 #include "fmc.h"
 #include "printf.h"
-#include "sd.h"
 #include "setup.h"
 #include "stm32mp135fxx_ca7.h"
 #include <inttypes.h>
@@ -25,6 +24,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef NAND_FLASH
+#include "sd.h"
+#endif
 
 #ifdef LCD_DISPLAY
 #include "lcd.h"
@@ -75,7 +78,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"ddr", DEF_PRINT_LEN, 0, DEF_LINUX_ADDR},
-            },                                     .num_defaults = 1,
+            },                                          .num_defaults = 1,
      .handler      = ddr_print_cmd,
      },
 
@@ -87,7 +90,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"image", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
-            },  .num_defaults = 1,
+            },       .num_defaults = 1,
      .handler      = load_sd_cmd,
      },
 #endif
@@ -99,7 +102,7 @@ static const struct cmd cmd_list[] = {
      .defaults =
             (const struct cmd_defaults[]){
                 {"target", 0, 0, DEF_LINUX_ADDR},
-            },                        .num_defaults = 1,
+            },                             .num_defaults = 1,
      .handler      = boot_jump,
      },
 
@@ -112,17 +115,6 @@ static const struct cmd cmd_list[] = {
      .handler      = diag_all,
      },
 
-    {
-     .name    = "one",
-     .syntax  = "",
-     .summary = "Load an executable and jump to it",
-     .defaults =
-            (const struct cmd_defaults[]){
-                {"exe", DEF_EXE_LEN, DEF_EXE_BLK, DEF_EXE_ADDR},
-            },                                     .num_defaults = 1,
-     .handler      = cmd_load_one,
-     },
-
 #ifndef NAND_FLASH
     {
      .name    = "two",
@@ -132,7 +124,7 @@ static const struct cmd cmd_list[] = {
             (const struct cmd_defaults[]){
                 {"linux", DEF_LINUX_LEN, DEF_LINUX_BLK, DEF_LINUX_ADDR},
                 {"dtb", DEF_DTB_LEN, DEF_DTB_BLK, DEF_DTB_ADDR},
-            },       .num_defaults = 2,
+            },                                          .num_defaults = 2,
      .handler      = sd_load_mbr,
      },
 #endif
@@ -229,7 +221,7 @@ static const struct cmd cmd_list[] = {
      .name     = "fmc_flush",
      .syntax   = "[n_blocks]",
      .summary  = "Write DDR buffer to NAND (erase before write; USB blocked "
-                    "during operation)",                                   .defaults = NULL,
+                    "during operation)",                       .defaults = NULL,
      .num_defaults = 0,
      .handler      = fmc_flush,
      },
@@ -255,7 +247,7 @@ static const struct cmd cmd_list[] = {
     {
      .name         = "fmc_bload",
      .syntax       = "",
-     .summary      = "Load kernel+DTB from NAND partitions into DDR",
+     .summary      = "Load kernel (and DTB if present) from NAND into DDR",
      .defaults     = NULL,
      .num_defaults = 0,
      .handler      = fmc_bload,
@@ -665,16 +657,6 @@ void cmd_reset(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    while (1) {
       __asm__ volatile("wfe"); // wait for event (low-power idle)
    }
-}
-
-void cmd_load_one(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
-{
-   (void)argc;
-   (void)arg1;
-   (void)arg2;
-   (void)arg3;
-   sd_read(DEF_EXE_BLK, DEF_EXE_LEN, DEF_EXE_ADDR);
-   boot_jump(1, DEF_EXE_ADDR, 0, 0);
 }
 
 // end file cmd.c

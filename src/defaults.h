@@ -15,11 +15,6 @@
 
 #define DEF_PRINT_LEN 128
 
-/* Generic executable loaded from SD by the "one" command. */
-#define DEF_EXE_ADDR 0xC0008000U
-#define DEF_EXE_LEN  512 /* sectors on SD */
-#define DEF_EXE_BLK  640 /* starting LBA on SD */
-
 /* Linux kernel. */
 #define DEF_LINUX_ADDR 0xC2000000U
 #define DEF_LINUX_LEN  15000 /* sectors on SD */

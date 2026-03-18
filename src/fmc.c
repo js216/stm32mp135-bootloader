@@ -821,8 +821,7 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    my_printf("\r\n");
 }
 
-/* Load all blocks of a NAND partition into DDR. Returns 0 on success, -1 on
- * error. */
+/* Load all blocks of a NAND partition into DDR. Returns 0 on success. */
 static int load_partition(const char *label, const nand_part_t *p, uint8_t *dst)
 {
    for (uint32_t i = 0; i < p->num_blocks; i++) {
@@ -836,6 +835,25 @@ static int load_partition(const char *label, const nand_part_t *p, uint8_t *dst)
          return -1;
       }
    }
+   return 0;
+}
+
+/* Load DTB partition and patch initrd addresses if present.  DTB is optional;
+ * returns 0 if dtb_p is NULL (bare kernel boot). */
+static int load_dtb(const nand_part_t *dtb_p, int have_initrd,
+                    uint32_t initrd_end)
+{
+   if (!dtb_p) {
+      my_printf("bload: no dtb partition — booting without DTB\r\n");
+      return 0;
+   }
+   my_printf("bload: DTB  blk %lu+%lu -> 0x%08lx\r\n",
+             (unsigned long)dtb_p->start_block,
+             (unsigned long)dtb_p->num_blocks, (unsigned long)DEF_DTB_ADDR);
+   if (load_partition("DTB", dtb_p, (uint8_t *)DEF_DTB_ADDR) != 0)
+      return -1;
+   if (have_initrd)
+      return dtb_patch_initrd(DEF_INITRD_ADDR, initrd_end);
    return 0;
 }
 
@@ -908,23 +926,8 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       my_printf("bload: no kernel partition\r\n");
       return;
    }
-   if (!dtb_p) {
-      my_printf("bload: no dtb partition\r\n");
+   if (load_dtb(dtb_p, have_initrd, initrd_end) != 0)
       return;
-   }
-
-   /* Load DTB. */
-   my_printf("bload: DTB  blk %lu+%lu -> 0x%08lx\r\n",
-             (unsigned long)dtb_p->start_block,
-             (unsigned long)dtb_p->num_blocks, (unsigned long)DEF_DTB_ADDR);
-   if (load_partition("DTB", dtb_p, (uint8_t *)DEF_DTB_ADDR) != 0)
-      return;
-
-   /* Patch DTB with initrd location if one was loaded. */
-   if (have_initrd) {
-      if (dtb_patch_initrd(DEF_INITRD_ADDR, initrd_end) != 0)
-         return;
-   }
 
    /* Load kernel. */
    my_printf("bload: kernel blk %lu+%lu -> 0x%08lx\r\n",
