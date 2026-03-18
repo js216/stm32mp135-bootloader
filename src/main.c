@@ -12,12 +12,15 @@
 #include "ddr.h"
 #include "eth.h"
 #include "fmc.h"
-#include "sd.h"
 #include "setup.h"
 #include "stm32mp135fxx_ca7.h"
 #include "stm32mp13xx_hal.h"
 #include "stm32mp13xx_hal_gpio.h"
 #include <stdint.h>
+
+#ifndef NAND_FLASH
+#include "sd.h"
+#endif
 
 #ifdef LCD_DISPLAY
 #include "lcd.h"
@@ -49,7 +52,9 @@ int main(void)
    gpio_init();
    ddr_init();
    mmu_init();
+#ifndef NAND_FLASH
    sd_init();
+#endif
 #ifdef NAND_FLASH
    fmc_init(0, 0, 0, 0);
 #endif

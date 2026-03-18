@@ -14,11 +14,13 @@
 
 extern SD_HandleTypeDef sd_handle;
 
+#ifndef NAND_FLASH
 void sd_init(void);
 void load_sd_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void sd_read(uint32_t lba, uint32_t num_blocks, uint32_t dest_addr);
 void sd_print_mbr(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 void sd_load_mbr(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+#endif
 
 #endif // SD_H
 

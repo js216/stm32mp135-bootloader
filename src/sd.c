@@ -10,7 +10,6 @@
 #include "sd.h"
 #include "board.h"
 #include "irq.h"
-#include <stdint.h>
 
 void SDMMC1_IRQHandler(void)
 {
@@ -222,43 +221,6 @@ void load_sd_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       lba = arg2;
 
    sd_read(lba, n, arg3);
-}
-
-#else // NAND_FLASH
-
-void sd_init(void)
-{
-}
-
-void load_sd_cmd(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
-{
-   (void)argc;
-   (void)arg1;
-   (void)arg2;
-   (void)arg3;
-}
-
-void sd_read(uint32_t lba, uint32_t num_blocks, uint32_t dest_addr)
-{
-   (void)lba;
-   (void)num_blocks;
-   (void)dest_addr;
-}
-
-void sd_print_mbr(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
-{
-   (void)argc;
-   (void)arg1;
-   (void)arg2;
-   (void)arg3;
-}
-
-void sd_load_mbr(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
-{
-   (void)argc;
-   (void)arg1;
-   (void)arg2;
-   (void)arg3;
 }
 
 #endif // NAND_FLASH
