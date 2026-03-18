@@ -194,6 +194,7 @@ uint8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr,
       return USBD_BUSY;
    memcpy(ddr_buf + blk_addr * STORAGE_BLK_SIZ, buf,
           (uint32_t)blk_len * STORAGE_BLK_SIZ);
+   fmc_note_usb_write(blk_addr, blk_len);
    return USBD_OK;
 #endif
 

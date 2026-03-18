@@ -58,6 +58,24 @@ static uint8_t bad[FMC_PLANE_NBR * FMC_PLANE_SIZE_BLOCKS];
 
 volatile int fmc_flush_active = 0;
 
+/* High-water mark of USB MSC writes (in 512-byte sectors).  Updated by
+ * fmc_note_usb_write(); reset to zero at the end of fmc_flush so that writes
+ * for the next operation (e.g. a recovery initrd) are counted independently. */
+static uint32_t usb_written_end_lba = 0U;
+
+// cppcheck-suppress unusedFunction
+void fmc_note_usb_write(uint32_t blk_addr, uint16_t blk_len)
+{
+   const uint32_t end = blk_addr + (uint32_t)blk_len;
+   if (end > usb_written_end_lba)
+      usb_written_end_lba = end;
+}
+
+uint32_t fmc_usb_written_bytes(void)
+{
+   return usb_written_end_lba * FMC_SECTOR_SIZE;
+}
+
 /* Override the weak MspInit to configure the three MDMA channels needed by
  * the FMC NAND sequencer.
  *
@@ -794,6 +812,7 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    }
 
    fmc_flush_active       = 0;
+   usb_written_end_lba    = 0U;
    const uint32_t elapsed = HAL_GetTick() - t0;
    my_printf("\r\ndone: %lu written, %lu skipped, %lu new-bad, %lu s, avg ",
              (unsigned long)written, (unsigned long)skipped,
@@ -832,16 +851,21 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    }
 
    /* Relocate initrd from USB DDR buffer if present (gzip magic). */
-   int have_initrd = 0;
+   int have_initrd     = 0;
+   uint32_t initrd_end = DEF_INITRD_END; /* updated below if size is known */
    {
       const uint8_t *h = (const uint8_t *)FMC_DDR_BUF_ADDR;
       if (h[0] == 0x1fU && h[1] == 0x8bU) {
+         const uint32_t written = fmc_usb_written_bytes();
+         const uint32_t max     = DEF_INITRD_END - DEF_INITRD_ADDR;
+         if (written > 0U && written <= max)
+            initrd_end = DEF_INITRD_ADDR + written;
          my_printf("bload: initrd at 0x%08lx -> 0x%08lx (%lu B)\r\n",
                    (unsigned long)FMC_DDR_BUF_ADDR,
                    (unsigned long)DEF_INITRD_ADDR,
-                   (unsigned long)(DEF_INITRD_END - DEF_INITRD_ADDR));
+                   (unsigned long)(initrd_end - DEF_INITRD_ADDR));
          memcpy((void *)DEF_INITRD_ADDR, (const void *)FMC_DDR_BUF_ADDR,
-                DEF_INITRD_END - DEF_INITRD_ADDR);
+                initrd_end - DEF_INITRD_ADDR);
          have_initrd = 1;
       }
    }
@@ -898,7 +922,7 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 
    /* Patch DTB with initrd location if one was loaded. */
    if (have_initrd) {
-      if (dtb_patch_initrd(DEF_INITRD_ADDR, DEF_INITRD_END) != 0)
+      if (dtb_patch_initrd(DEF_INITRD_ADDR, initrd_end) != 0)
          return;
    }
 
