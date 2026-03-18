@@ -15,6 +15,7 @@
 
 #include "console.h"
 #include "defaults.h"
+#include "dtb.h"
 #include "irq_ctrl.h"
 #include "nand_pt.h"
 #include "printf.h"
@@ -801,6 +802,24 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    my_printf("\r\n");
 }
 
+/* Load all blocks of a NAND partition into DDR. Returns 0 on success, -1 on
+ * error. */
+static int load_partition(const char *label, const nand_part_t *p, uint8_t *dst)
+{
+   for (uint32_t i = 0; i < p->num_blocks; i++) {
+      const uint32_t phys = lba_to_phys_block(p->start_block + i);
+      if (phys == UINT32_MAX) {
+         my_printf("bload: %s block %lu missing\r\n", label, (unsigned long)i);
+         return -1;
+      }
+      if (read_block(phys, dst + (i * BLOCK_BYTES)) != HAL_OK) {
+         my_printf("bload: %s read error blk %lu\r\n", label, (unsigned long)i);
+         return -1;
+      }
+   }
+   return 0;
+}
+
 void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)argc;
@@ -813,6 +832,7 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    }
 
    /* Relocate initrd from USB DDR buffer if present (gzip magic). */
+   int have_initrd = 0;
    {
       const uint8_t *h = (const uint8_t *)FMC_DDR_BUF_ADDR;
       if (h[0] == 0x1fU && h[1] == 0x8bU) {
@@ -822,6 +842,7 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
                    (unsigned long)(DEF_INITRD_END - DEF_INITRD_ADDR));
          memcpy((void *)DEF_INITRD_ADDR, (const void *)FMC_DDR_BUF_ADDR,
                 DEF_INITRD_END - DEF_INITRD_ADDR);
+         have_initrd = 1;
       }
    }
 
@@ -872,35 +893,21 @@ void fmc_bload(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    my_printf("bload: DTB  blk %lu+%lu -> 0x%08lx\r\n",
              (unsigned long)dtb_p->start_block,
              (unsigned long)dtb_p->num_blocks, (unsigned long)DEF_DTB_ADDR);
-   uint8_t *const dtb_dst = (uint8_t *)DEF_DTB_ADDR;
-   for (uint32_t i = 0; i < dtb_p->num_blocks; i++) {
-      const uint32_t phys = lba_to_phys_block(dtb_p->start_block + i);
-      if (phys == UINT32_MAX) {
-         my_printf("bload: DTB block %lu missing\r\n", (unsigned long)i);
+   if (load_partition("DTB", dtb_p, (uint8_t *)DEF_DTB_ADDR) != 0)
+      return;
+
+   /* Patch DTB with initrd location if one was loaded. */
+   if (have_initrd) {
+      if (dtb_patch_initrd(DEF_INITRD_ADDR, DEF_INITRD_END) != 0)
          return;
-      }
-      if (read_block(phys, dtb_dst + (i * BLOCK_BYTES)) != HAL_OK) {
-         my_printf("bload: DTB read error blk %lu\r\n", (unsigned long)i);
-         return;
-      }
    }
 
    /* Load kernel. */
    my_printf("bload: kernel blk %lu+%lu -> 0x%08lx\r\n",
              (unsigned long)kern_p->start_block,
              (unsigned long)kern_p->num_blocks, (unsigned long)DEF_LINUX_ADDR);
-   uint8_t *const kern_dst = (uint8_t *)DEF_LINUX_ADDR;
-   for (uint32_t i = 0; i < kern_p->num_blocks; i++) {
-      const uint32_t phys = lba_to_phys_block(kern_p->start_block + i);
-      if (phys == UINT32_MAX) {
-         my_printf("bload: kernel block %lu missing\r\n", (unsigned long)i);
-         return;
-      }
-      if (read_block(phys, kern_dst + (i * BLOCK_BYTES)) != HAL_OK) {
-         my_printf("bload: kernel read error blk %lu\r\n", (unsigned long)i);
-         return;
-      }
-   }
+   if (load_partition("kernel", kern_p, (uint8_t *)DEF_LINUX_ADDR) != 0)
+      return;
 
    my_printf("bload: done\r\n");
 }

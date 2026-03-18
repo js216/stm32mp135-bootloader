@@ -26,7 +26,8 @@
 #define DEF_DTB_LEN  250
 #define DEF_DTB_BLK  640
 
-/* Recovery initrd destination in DDR (must match /chosen in factory.dts). */
+/* Recovery initrd destination in DDR (patched into /chosen by
+ * dtb_patch_initrd). */
 #define DEF_INITRD_ADDR 0xCA000000U
 #define DEF_INITRD_END  0xCC000000U /* DEF_INITRD_ADDR + 32 MiB */
 
