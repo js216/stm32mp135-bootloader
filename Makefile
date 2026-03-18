@@ -57,6 +57,9 @@ format:
 	grep -rlP '\r' --include='*.[chSs]' --include='*.py' --include='*.md' \
 		--include='Makefile' --include='*.ld' --include='*.tsv' . \
 		&& { echo "CRLF line endings found (see above)"; exit 1; } || true
+	git ls-files \
+		| xargs grep -P -n '[^\x00-\x7F]' 2>/dev/null \
+		&& { echo "Non-ASCII characters found (see above)"; exit 1; } || true
 	clang-format --dry-run -Werror $(wildcard */*.[ch])
 
 tidy:
