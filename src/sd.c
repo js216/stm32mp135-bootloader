@@ -22,6 +22,7 @@ SD_HandleTypeDef sd_handle;
 #ifndef NAND_FLASH
 
 #include "cmsis_gcc.h"
+#include "core_ca.h"
 #include "debug.h"
 #include "defaults.h"
 #include "irq_ctrl.h"
@@ -35,6 +36,7 @@ SD_HandleTypeDef sd_handle;
 #include "stm32mp13xx_ll_sdmmc.h"
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define BLOCK_SIZE 512U
 #define DDR_SIZE   0x20000000U // 512 MB
@@ -139,6 +141,46 @@ void sd_read(uint32_t lba, uint32_t num_blocks, uint32_t dest_addr)
       ; // wait
 
    __enable_irq();
+}
+
+int sd_read_blocks(uint32_t lba, uint8_t *buf, uint32_t num_blocks)
+{
+   if (num_blocks == 0U)
+      return 0;
+
+   L1C_CleanInvalidateDCacheAll();
+   if (HAL_SD_ReadBlocks(&sd_handle, buf, lba, num_blocks, 10000) != HAL_OK)
+      return -1;
+   while (sd_handle.State != HAL_SD_STATE_READY)
+      ;
+   while (HAL_SD_GetCardState(&sd_handle) != HAL_SD_CARD_TRANSFER)
+      ;
+   L1C_CleanInvalidateDCacheAll();
+   return 0;
+}
+
+int sd_write_blocks(uint32_t lba, const uint8_t *buf, uint32_t num_blocks)
+{
+   if (num_blocks == 0U)
+      return 0;
+
+   L1C_CleanDCacheAll();
+   if (HAL_SD_WriteBlocks(&sd_handle, (uint8_t *)buf, lba, num_blocks, 10000) !=
+       HAL_OK)
+      return -1;
+   while (sd_handle.State != HAL_SD_STATE_READY)
+      ;
+   while (HAL_SD_GetCardState(&sd_handle) != HAL_SD_CARD_TRANSFER)
+      ;
+   return 0;
+}
+
+uint32_t sd_block_count(void)
+{
+   HAL_SD_CardInfoTypeDef info;
+   if (HAL_SD_GetCardInfo(&sd_handle, &info) != HAL_OK)
+      return 0U;
+   return info.LogBlockNbr;
 }
 
 static void parse_mbr_entry(uint8_t *buffer, struct mbr_partition *p)

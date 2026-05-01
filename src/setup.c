@@ -26,16 +26,11 @@
 #include "stm32mp13xx_hal_uart.h"
 #include "stm32mp13xx_hal_uart_ex.h"
 #include "stm32mp13xx_ll_etzpc.h"
-#include "usbd_core.h"
-#include "usbd_def.h"
-#include "usbd_desc.h"
-#include "usbd_msc.h"
-#include "usbd_msc_storage.h"
+#include "usb_msc.h"
 #include <stdint.h>
 
 // global variables
 UART_HandleTypeDef huart4;
-USBD_HandleTypeDef usbd_device;
 
 void UART4_IRQHandler(void)
 {
@@ -394,10 +389,7 @@ void uart4_init(void)
 
 void usb_init(void)
 {
-   USBD_Init(&usbd_device, &MSC_Desc, 0);
-   USBD_RegisterClass(&usbd_device, USBD_MSC_CLASS);
-   USBD_MSC_RegisterStorage(&usbd_device, &USBD_MSC_fops);
-   USBD_Start(&usbd_device);
+   usb_msc_init();
 }
 
 void gic_init(void)

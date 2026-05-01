@@ -1,10 +1,10 @@
-DIRS := src drivers nonfree utils
+DIRS := src drivers utils
 HDR := $(wildcard $(addsuffix /*.h,$(DIRS)))
 SRC := $(wildcard $(addsuffix /*.c,$(DIRS)))
 OBJ := $(patsubst %.c,build/%.o,$(SRC))
 
 CFLAGS = \
-	 -Idrivers -Inonfree -Isrc -Iutils \
+	 -Idrivers -Isrc -Iutils \
 	 -D__int64_t_defined=1 \
 	 -std=c99 -Wall -Wextra -Wpedantic -Wshadow -Wundef \
 	 -Wmissing-prototypes -Wpointer-arith -Wfloat-equal \
