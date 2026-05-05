@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2026 Stanford Research Systems, Inc.
+# Copyright (c) 2026 Jakob Kastelic
 
 """
 Build a NAND flash image with a partition table.

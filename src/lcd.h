@@ -4,7 +4,7 @@
  * @file lcd.h
  * @brief LCD display and CTP touch control.
  * @author Jakob Kastelic
- * @copyright 2026 Stanford Research Systems, Inc.
+ * @copyright 2026 Jakob Kastelic
  */
 
 #ifndef LCD_H

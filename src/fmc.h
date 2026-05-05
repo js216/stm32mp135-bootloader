@@ -4,7 +4,7 @@
  * @file fmc.h
  * @brief FMC NAND management
  * @author Jakob Kastelic
- * @copyright 2026 Stanford Research Systems, Inc.
+ * @copyright 2026 Jakob Kastelic
  */
 
 #ifndef FMC_H

@@ -4,7 +4,7 @@
  * @file boot.S
  * @brief Handoff to application
  * @author Jakob Kastelic
- * @copyright 2025 Stanford Research Systems, Inc.
+ * @copyright 2025 Jakob Kastelic
  */
 
 #include "defaults.h"

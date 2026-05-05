@@ -4,7 +4,7 @@
  * @file prng.c
  * @brief xorshift64 pseudo-random number generator
  * @author Jakob Kastelic
- * @copyright 2026 Stanford Research Systems, Inc.
+ * @copyright 2026 Jakob Kastelic
  */
 
 #include "prng.h"

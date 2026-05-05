@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: BSD-3-Clause
+# inclusions.py --- TODO: description
+# Copyright (c) 2026 Jakob Kastelic
 """
 Generate a Graphviz inclusion graph for C/C++ projects.
 

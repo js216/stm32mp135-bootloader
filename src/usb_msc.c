@@ -3,7 +3,7 @@
 /**
  * @file usb_msc.c
  * @brief Minimal USB MSC Bulk-Only Transport device implementation.
- * @copyright 2026 Stanford Research Systems, Inc.
+ * @copyright 2026 Jakob Kastelic
  */
 
 #include "usb_msc.h"

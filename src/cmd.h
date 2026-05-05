@@ -4,7 +4,7 @@
  * @file cmd.h
  * @brief Command line interface
  * @author Jakob Kastelic
- * @copyright 2025 Stanford Research Systems, Inc.
+ * @copyright 2025 Jakob Kastelic
  */
 
 #ifndef CMD_H

@@ -4,7 +4,7 @@
  * @file main.c
  * @brief Application entry point
  * @author Jakob Kastelic
- * @copyright 2025 Stanford Research Systems, Inc.
+ * @copyright 2025 Jakob Kastelic
  */
 
 #include "stm32mp135fxx_ca7.h"

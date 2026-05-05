@@ -4,7 +4,7 @@
  * @file ctp.c
  * @brief CTP touch control.
  * @author Jakob Kastelic
- * @copyright 2026 Stanford Research Systems, Inc.
+ * @copyright 2026 Jakob Kastelic
  */
 
 #include "ctp.h"

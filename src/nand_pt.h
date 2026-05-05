@@ -5,7 +5,7 @@
  * @brief NAND partition table layout (shared between firmware and
  * nandimage.py).
  * @author Jakob Kastelic
- * @copyright 2026 Stanford Research Systems, Inc.
+ * @copyright 2026 Jakob Kastelic
  *
  * Block layout:
  *   0   bootloader primary   (ROM scans blocks 0..3 for STM32 header)

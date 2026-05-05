@@ -4,7 +4,7 @@
  * @file dtb.h
  * @brief In-memory DTB patching
  * @author Jakob Kastelic
- * @copyright 2026 Stanford Research Systems, Inc.
+ * @copyright 2026 Jakob Kastelic
  */
 
 #ifndef DTB_H

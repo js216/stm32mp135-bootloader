@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Makefile --- TODO: description
+# Copyright (c) 2026 Jakob Kastelic
 DIRS := src drivers utils
 HDR := $(wildcard $(addsuffix /*.h,$(DIRS)))
 SRC := $(wildcard $(addsuffix /*.c,$(DIRS)))

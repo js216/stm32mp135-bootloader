@@ -3,7 +3,7 @@
 /**
  * @file usb_msc.h
  * @brief USB Mass Storage Class device.
- * @copyright 2026 Stanford Research Systems, Inc.
+ * @copyright 2026 Jakob Kastelic
  */
 
 #ifndef USB_MSC_H

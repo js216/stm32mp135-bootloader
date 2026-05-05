@@ -4,7 +4,7 @@
  * @file boot.h
  * @brief Bootloading procedures
  * @author Jakob Kastelic
- * @copyright 2025 Stanford Research Systems, Inc.
+ * @copyright 2025 Jakob Kastelic
  */
 
 #ifndef BOOT_H

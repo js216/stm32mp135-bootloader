@@ -4,7 +4,7 @@
  * @file diag.c
  * @brief Diagnostic tests
  * @author Jakob Kastelic
- * @copyright 2025 Stanford Research Systems, Inc.
+ * @copyright 2025 Jakob Kastelic
  */
 
 #include "diag.h"

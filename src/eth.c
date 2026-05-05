@@ -4,7 +4,7 @@
  * @file eth.h
  * @brief Ethernet test
  * @author Jakob Kastelic
- * @copyright 2026 Stanford Research Systems, Inc.
+ * @copyright 2026 Jakob Kastelic
  */
 
 #include "eth.h"
