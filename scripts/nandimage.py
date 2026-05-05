@@ -86,6 +86,7 @@ def main():
     args = parser.parse_args()
 
     img_path = Path(args.image)
+    img_path.parent.mkdir(parents=True, exist_ok=True)
     img_path.write_bytes(b'')
 
     parts = []

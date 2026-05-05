@@ -264,10 +264,8 @@
 
 #undef REG_PRINTOUT
 #undef LCD_DISPLAY
-/* NAND boot path will return once the SD-only mission is green; the
- * custom PCB hardware has both NAND and an SD slot, but SD is the
- * simpler bring-up so we mirror the EVB's MSC+SD flow first. */
-#undef NAND_FLASH
+/* Custom PCB can build either SD or NAND boot paths; select NAND with
+ * CFLAGS_EXTRA=-DNAND_FLASH. */
 #define USE_MCP23x17    0
 
 /* DDR REG VALUES TO BE SAVED */
