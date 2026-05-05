@@ -243,7 +243,11 @@ static uint16_t make_string(uint8_t idx)
    else if (idx == 2U)
       s = "STM32MP135 MSC";
    else if (idx == 3U)
-      s = "385836733232";
+#ifdef EVB
+      s = "002800425115";
+#else
+      s = "001E00065113";
+#endif
    else
       return 0U;
 
@@ -674,7 +678,11 @@ void usb_msc_init(void)
    hpcd.Init.low_power_enable = 0U;
    hpcd.Init.lpm_enable = 0U;
    hpcd.Init.battery_charging_enable = 0U;
+#ifdef EVB
    hpcd.Init.vbus_sensing_enable = 1U;
+#else
+   hpcd.Init.vbus_sensing_enable = 0U;
+#endif
    hpcd.Init.use_dedicated_ep1 = 0U;
    hpcd.Init.use_external_vbus = 0U;
 
