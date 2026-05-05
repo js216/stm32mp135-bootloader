@@ -7,6 +7,7 @@
  */
 
 #include "usb_msc.h"
+#include "board.h"
 #include "debug.h"
 #include "defaults.h"
 #include "irq.h"
@@ -235,6 +236,28 @@ static void ep0_stall(void)
    (void)HAL_PCD_EP_SetStall(&hpcd, 0x00U);
 }
 
+static const char *unique_serial(void)
+{
+   /* 12-char hex serial derived from the chip's factory UID (96-bit
+    * across HAL_GetUIDw0..w2). Same chip always gives the same string;
+    * different chips never collide. Bench config matches on this so a
+    * dual-board setup (EVB + custom PCB) can target each by iSerial. */
+   static char buf[13];
+   if (buf[0] == '\0') {
+      static const char hex[] = "0123456789ABCDEF";
+      uint32_t w0 = HAL_GetUIDw0();
+      uint32_t w1 = HAL_GetUIDw1();
+      for (int i = 0; i < 8; i++) {
+         buf[i] = hex[(w0 >> (28 - i * 4)) & 0xF];
+      }
+      for (int i = 0; i < 4; i++) {
+         buf[8 + i] = hex[(w1 >> (12 - i * 4)) & 0xF];
+      }
+      buf[12] = '\0';
+   }
+   return buf;
+}
+
 static uint16_t make_string(uint8_t idx)
 {
    const char *s = "";
@@ -243,11 +266,7 @@ static uint16_t make_string(uint8_t idx)
    else if (idx == 2U)
       s = "STM32MP135 MSC";
    else if (idx == 3U)
-#ifdef EVB
-      s = "002800425115";
-#else
-      s = "001E00065113";
-#endif
+      s = unique_serial();
    else
       return 0U;
 

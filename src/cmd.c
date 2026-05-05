@@ -17,6 +17,7 @@
 #include "eth.h"
 #include "fmc.h"
 #include "printf.h"
+#include "stm32mp13xx_hal.h"
 #include "setup.h"
 #include "stm32mp135fxx_ca7.h"
 #include <inttypes.h>
@@ -302,7 +303,14 @@ static void cmd_prompt(void)
 
 void cmd_init(void)
 {
-   my_printf("\r\n");
+   /* Print chip UID + derived MSC iSerial so bench operators can
+    * pin per-board USB descriptors without lsusb access. */
+   uint32_t w0 = HAL_GetUIDw0();
+   uint32_t w1 = HAL_GetUIDw1();
+   uint32_t w2 = HAL_GetUIDw2();
+   my_printf("\r\nUID %08lX %08lX %08lX MSC-iSerial %08lX%04lX\r\n",
+             (unsigned long)w0, (unsigned long)w1, (unsigned long)w2,
+             (unsigned long)w0, (unsigned long)(w1 & 0xFFFF));
    cmd_prompt();
 }
 
@@ -606,6 +614,23 @@ void cmd_help(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    (void)arg1;
    (void)arg2;
    (void)arg3;
+
+   /* Print chip-unique identifiers first so a mission step can run
+    * `help` and verify the freshly DFU-loaded bootloader is the one
+    * speaking on this UART (and not a stale prior image). */
+   uint32_t w0 = HAL_GetUIDw0();
+   uint32_t w1 = HAL_GetUIDw1();
+   uint32_t w2 = HAL_GetUIDw2();
+   my_printf("UID %08lX %08lX %08lX\r\n",
+             (unsigned long)w0, (unsigned long)w1, (unsigned long)w2);
+   my_printf("MSC-iSerial %08lX%04lX\r\n",
+             (unsigned long)w0, (unsigned long)(w1 & 0xFFFF));
+#ifdef EVB
+   my_printf("Board EVB\r\n");
+#else
+   my_printf("Board custom\r\n");
+#endif
+   my_printf("\r\n");
 
    my_printf("Available commands:\r\n\r\n");
 
