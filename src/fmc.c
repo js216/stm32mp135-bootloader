@@ -722,13 +722,9 @@ static uint32_t pt_total_blocks(void)
 }
 
 /* Flush one good physical block from DDR src to NAND phys.
- * Returns: 1 = skipped (already matches), 0 = written, -1 = newly bad. */
+ * Returns: 0 = written, -1 = newly bad. */
 static int flush_one_block(uint32_t phys, const uint8_t *src, uint32_t ppb)
 {
-   if (read_block(phys, buf_a) == HAL_OK &&
-       memcmp(buf_a, src, BLOCK_BYTES) == 0)
-      return 1;
-
    if (erase_block(phys) != HAL_OK) {
       my_printf("\rnewly bad %lu (flush erase)\r\n", (unsigned long)phys);
       mark_bad_oob(phys);
@@ -806,9 +802,7 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       if (!bad[phys]) {
          const uint8_t *const src = ddr + (good_idx * BLOCK_BYTES);
          const int result         = flush_one_block(phys, src, ppb);
-         if (result == 1)
-            skipped++;
-         else if (result == 0)
+         if (result == 0)
             written++;
          else
             bad_new++;
