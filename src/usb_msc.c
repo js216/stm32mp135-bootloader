@@ -34,8 +34,11 @@
 #define MSC_IN_EP       0x81U
 #define MSC_OUT_EP      0x01U
 #define EP0_SIZE        64U
-#define MSC_PACKET_SIZE 64U
+#define MSC_PACKET_SIZE 512U
+#define MSC_PACKET_SIZE_LO ((uint8_t)(MSC_PACKET_SIZE & 0xFFU))
+#define MSC_PACKET_SIZE_HI ((uint8_t)(MSC_PACKET_SIZE >> 8))
 #define MSC_BLOCK_SIZE  512U
+#define MSC_BURST_BLOCKS 128U
 
 #define USB_REQ_GET_STATUS        0x00U
 #define USB_REQ_CLEAR_FEATURE     0x01U
@@ -121,7 +124,9 @@ static uint8_t sense_ascq;
 static uint8_t ep0_status[2] __attribute__((aligned(32)));
 static uint8_t cbw_buf[31] __attribute__((aligned(32)));
 static uint8_t csw_buf[13] __attribute__((aligned(32)));
+#ifndef NAND_FLASH
 static uint8_t block_buf[MSC_BLOCK_SIZE] __attribute__((aligned(32)));
+#endif
 static uint8_t ctrl_buf[64] __attribute__((aligned(32)));
 
 static const uint8_t dev_desc[] = {
@@ -132,8 +137,8 @@ static const uint8_t dev_desc[] = {
 static const uint8_t cfg_desc[] = {
     9,  2, 32, 0, 1, 1, 0, 0x80, 50,
     9,  4, 0,  0, 2, 8, 6, 0x50, 0,
-    7,  5, MSC_IN_EP,  2, MSC_PACKET_SIZE, 0, 0,
-    7,  5, MSC_OUT_EP, 2, MSC_PACKET_SIZE, 0, 0,
+    7,  5, MSC_IN_EP,  2, MSC_PACKET_SIZE_LO, MSC_PACKET_SIZE_HI, 0,
+    7,  5, MSC_OUT_EP, 2, MSC_PACKET_SIZE_LO, MSC_PACKET_SIZE_HI, 0,
 };
 
 static const uint8_t qual_desc[] = {
@@ -190,30 +195,17 @@ static uint32_t storage_blocks(void)
 #endif
 }
 
+#ifndef NAND_FLASH
 static int storage_read(uint32_t lba, uint8_t *buf)
 {
-#ifndef NAND_FLASH
    return sd_read_blocks(lba, buf, 1U);
-#else
-   memcpy(buf, (const void *)(FMC_DDR_BUF_ADDR + (lba * MSC_BLOCK_SIZE)),
-          MSC_BLOCK_SIZE);
-   L1C_CleanInvalidateDCacheAll();
-   return 0;
-#endif
 }
 
 static int storage_write(uint32_t lba, const uint8_t *buf)
 {
-#ifndef NAND_FLASH
    return sd_write_blocks(lba, buf, 1U);
-#else
-   memcpy((void *)(FMC_DDR_BUF_ADDR + (lba * MSC_BLOCK_SIZE)), buf,
-          MSC_BLOCK_SIZE);
-   fmc_note_usb_write(lba, 1U);
-   L1C_CleanDCacheAll();
-   return 0;
-#endif
 }
+#endif
 
 static void ep0_send(const uint8_t *buf, uint16_t len, uint16_t req_len)
 {
@@ -330,6 +322,7 @@ static void data_in_next_block(void)
       send_csw(0U);
       return;
    }
+#ifndef NAND_FLASH
    if (storage_read(data_lba, block_buf) != 0) {
       set_sense(0x03U, 0x11U, 0x00U);
       send_csw(1U);
@@ -341,6 +334,34 @@ static void data_in_next_block(void)
                                                  : 0U;
    L1C_CleanDCacheAll();
    (void)HAL_PCD_EP_Transmit(&hpcd, MSC_IN_EP, block_buf, MSC_BLOCK_SIZE);
+#else
+   uint32_t blocks = data_blocks;
+   if (blocks > MSC_BURST_BLOCKS)
+      blocks = MSC_BURST_BLOCKS;
+   uint32_t len = blocks * MSC_BLOCK_SIZE;
+   uint8_t *buf = (uint8_t *)(FMC_DDR_BUF_ADDR + data_lba * MSC_BLOCK_SIZE);
+   data_lba += blocks;
+   data_blocks -= blocks;
+   csw.residue = (csw.residue >= len) ? csw.residue - len : 0U;
+   L1C_CleanDCacheAll();
+   (void)HAL_PCD_EP_Transmit(&hpcd, MSC_IN_EP, buf, len);
+#endif
+}
+
+static void data_out_next_block(void)
+{
+#ifndef NAND_FLASH
+   L1C_CleanInvalidateDCacheAll();
+   (void)HAL_PCD_EP_Receive(&hpcd, MSC_OUT_EP, block_buf, MSC_BLOCK_SIZE);
+#else
+   uint32_t blocks = data_blocks;
+   if (blocks > MSC_BURST_BLOCKS)
+      blocks = MSC_BURST_BLOCKS;
+   data_len = blocks * MSC_BLOCK_SIZE;
+   data_ptr = (uint8_t *)(FMC_DDR_BUF_ADDR + data_lba * MSC_BLOCK_SIZE);
+   L1C_CleanInvalidateDCacheAll();
+   (void)HAL_PCD_EP_Receive(&hpcd, MSC_OUT_EP, data_ptr, data_len);
+#endif
 }
 
 static void scsi_good_no_data(void)
@@ -462,8 +483,7 @@ static void handle_cbw(void)
          data_lba    = lba;
          data_blocks = blocks;
          bot_state   = BOT_DATA_OUT;
-         L1C_CleanInvalidateDCacheAll();
-         (void)HAL_PCD_EP_Receive(&hpcd, MSC_OUT_EP, block_buf, MSC_BLOCK_SIZE);
+         data_out_next_block();
          break;
 
       default:
@@ -665,8 +685,13 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *ph, uint8_t epnum)
    if (bot_state == BOT_WAIT_CBW && rx == sizeof(cbw_buf)) {
       L1C_CleanInvalidateDCacheAll();
       handle_cbw();
-   } else if (bot_state == BOT_DATA_OUT && rx == MSC_BLOCK_SIZE) {
+   } else if (bot_state == BOT_DATA_OUT && rx != 0U) {
       L1C_CleanInvalidateDCacheAll();
+#ifndef NAND_FLASH
+      if (rx != MSC_BLOCK_SIZE) {
+         bot_recv_cbw();
+         return;
+      }
       if (storage_write(data_lba, block_buf) != 0) {
          set_sense(0x03U, 0x0CU, 0x00U);
          send_csw(1U);
@@ -676,10 +701,21 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *ph, uint8_t epnum)
       data_blocks--;
       csw.residue = (csw.residue >= MSC_BLOCK_SIZE) ? csw.residue - MSC_BLOCK_SIZE
                                                     : 0U;
+#else
+      if (rx != data_len || data_len == 0U) {
+         bot_recv_cbw();
+         return;
+      }
+      uint32_t blocks = data_len / MSC_BLOCK_SIZE;
+      fmc_note_usb_write(data_lba, (uint16_t)blocks);
+      data_lba += blocks;
+      data_blocks -= blocks;
+      csw.residue = (csw.residue >= data_len) ? csw.residue - data_len : 0U;
+#endif
       if (data_blocks == 0U) {
          send_csw(0U);
       } else {
-         (void)HAL_PCD_EP_Receive(&hpcd, MSC_OUT_EP, block_buf, MSC_BLOCK_SIZE);
+         data_out_next_block();
       }
    } else {
       bot_recv_cbw();
@@ -690,7 +726,7 @@ void usb_msc_init(void)
 {
    hpcd.Instance = USB_OTG_HS;
    hpcd.Init.dev_endpoints = 4U;
-   hpcd.Init.speed = PCD_SPEED_FULL;
+   hpcd.Init.speed = PCD_SPEED_HIGH;
    hpcd.Init.dma_enable = 0U;
    hpcd.Init.phy_itface = PCD_PHY_UTMI;
    hpcd.Init.Sof_enable = 0U;
