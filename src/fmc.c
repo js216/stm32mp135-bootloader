@@ -36,6 +36,7 @@
 #define BUF_A_ADDR  (FMC_SCRATCH_ADDR)
 #define BUF_B_ADDR  (FMC_SCRATCH_ADDR + BLOCK_BYTES)
 #define TEST_SEED   UINT64_C(0xCAFEBABEDEADBEEF)
+#define FMC_BBT_RESERVED_BLOCKS 2U
 
 static NAND_HandleTypeDef hnand;
 static int nand_ready = 0;
@@ -746,6 +747,23 @@ static int flush_one_block(uint32_t phys, const uint8_t *src, uint32_t ppb)
    return 0;
 }
 
+static void erase_tail_blocks(uint32_t start_phys, uint32_t end_phys,
+                              uint32_t *erased, uint32_t *bad_new)
+{
+   for (uint32_t phys = start_phys; phys < end_phys; phys++) {
+      if (bad[phys])
+         continue;
+      if (erase_block(phys) == HAL_OK) {
+         (*erased)++;
+      } else {
+         my_printf("\rnewly bad %lu (tail erase)\r\n", (unsigned long)phys);
+         mark_bad_oob(phys);
+         bad[phys] = 1;
+         (*bad_new)++;
+      }
+   }
+}
+
 void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
    (void)arg2;
@@ -760,12 +778,15 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    const uint32_t max_blks = FMC_DDR_BUF_SIZE / BLOCK_BYTES;
    const uint32_t pt_n     = pt_total_blocks();
    uint32_t n              = 0U;
+   uint32_t erase_tail      = 0U;
    if (argc >= 1 && arg1 > 0 && arg1 <= max_blks)
       n = arg1;
-   else if (pt_n > 0 && pt_n <= max_blks)
+   else if (pt_n > 0 && pt_n <= max_blks) {
       n = pt_n;
-   else
+      erase_tail = 1U;
+   } else {
       n = max_blks;
+   }
    const uint8_t *const ddr = (const uint8_t *)FMC_DDR_BUF_ADDR;
 
    fmc_flush_active = 1;
@@ -773,6 +794,7 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
    uint32_t written  = 0;
    uint32_t skipped  = 0;
    uint32_t bad_new  = 0;
+   uint32_t tail_erased = 0;
    uint32_t good_idx = 0;
    uint32_t phys     = 0;
    const uint32_t t0 = HAL_GetTick();
@@ -811,12 +833,25 @@ void fmc_flush(int argc, uint32_t arg1, uint32_t arg2, uint32_t arg3)
       }
    }
 
+   if (erase_tail && phys < total) {
+      const uint32_t end_phys =
+          total > FMC_BBT_RESERVED_BLOCKS ? total - FMC_BBT_RESERVED_BLOCKS
+                                          : total;
+      if (phys < end_phys) {
+         my_printf("\r\nerasing tail: phys %lu..%lu\r\n",
+                   (unsigned long)phys, (unsigned long)(end_phys - 1U));
+         erase_tail_blocks(phys, end_phys, &tail_erased, &bad_new);
+      }
+   }
+
    fmc_flush_active       = 0;
    usb_written_end_lba    = 0U;
    const uint32_t elapsed = HAL_GetTick() - t0;
-   my_printf("\r\ndone: %lu written, %lu skipped, %lu new-bad, %lu s, avg ",
+   my_printf("\r\ndone: %lu written, %lu skipped, %lu tail-erased, "
+             "%lu new-bad, %lu s, avg ",
              (unsigned long)written, (unsigned long)skipped,
-             (unsigned long)bad_new, (unsigned long)(elapsed / 1000U));
+             (unsigned long)tail_erased, (unsigned long)bad_new,
+             (unsigned long)(elapsed / 1000U));
    print_mbs((written + skipped) * BLOCK_BYTES, elapsed);
    my_printf("\r\n");
 }
