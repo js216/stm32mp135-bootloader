@@ -127,6 +127,7 @@ void sd_read(uint32_t lba, uint32_t num_blocks, uint32_t dest_addr)
              " to DDR addr 0x%" PRIX32 " ...\r\n",
              num_blocks, lba, dest_addr);
 
+   L1C_CleanInvalidateDCacheAll();
    __disable_irq();
 
    if (HAL_SD_ReadBlocks(&sd_handle, (uint8_t *)dest_addr, lba, num_blocks,
@@ -141,6 +142,7 @@ void sd_read(uint32_t lba, uint32_t num_blocks, uint32_t dest_addr)
       ; // wait
 
    __enable_irq();
+   L1C_CleanInvalidateDCacheAll();
 }
 
 int sd_read_blocks(uint32_t lba, uint8_t *buf, uint32_t num_blocks)
